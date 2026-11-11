@@ -5,11 +5,11 @@ import App from './App.tsx'
 
 if (import.meta.env.VITE_DEMO === '1') await import('./demo/mock')
 
-// An email login link lands with tokens in the address. Remember that so the
-// home page can forward the person to their account once they're signed in.
+// Email links (confirm account, reset password) land with tokens in the address.
+// Remember which kind so the home page can send the person to the right place once signed in.
 if (/access_token=|error_description=/.test(window.location.hash)) {
   try {
-    sessionStorage.setItem('fromLoginLink', '1')
+    sessionStorage.setItem('fromLoginLink', /type=recovery/.test(window.location.hash) ? 'recovery' : '1')
   } catch {
     /* storage blocked */
   }

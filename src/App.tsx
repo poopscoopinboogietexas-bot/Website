@@ -6,6 +6,7 @@ import Faq from './pages/Faq'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import CustomerHome from './pages/CustomerHome'
+import ResetPassword from './pages/ResetPassword'
 import Today from './pages/Today'
 import Job from './pages/Job'
 import Clients from './pages/Clients'
@@ -32,6 +33,7 @@ export default function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/account" element={<CustomerRoute />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/app/*" element={<StaffApp />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

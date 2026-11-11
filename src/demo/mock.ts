@@ -190,6 +190,10 @@ auth.signInWithPassword = async () => {
   listeners.forEach((cb) => cb('SIGNED_IN', current))
   return { data: { session: current, user }, error: null }
 }
+// Sign-up acts like the real thing with "Confirm email" on: account made, no session until the link is tapped.
+auth.signUp = async () => ({ data: { user: { ...user, identities: [{}] }, session: null }, error: null })
+auth.resetPasswordForEmail = async () => ({ data: {}, error: null })
+auth.updateUser = async () => ({ data: { user: current?.user ?? null }, error: null })
 auth.signOut = async () => {
   current = null
   listeners.forEach((cb) => cb('SIGNED_OUT', null))

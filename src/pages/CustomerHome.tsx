@@ -90,8 +90,8 @@ export default function CustomerHome() {
       <main className="page">
         {header}
         <div className="card">
-          <h2>We couldn’t find your account</h2>
-          <div>We look you up by the email you logged in with. If you just signed up, we’ll finish setting you up within a day. Otherwise, text us and we’ll fix it.</div>
+          <h2>You’re signed up!</h2>
+          <div>We got your info and will reach out within a day to set up your first visit. Once you’re on the schedule, your plan, visit photos and payment options show up here.</div>
         </div>
       </main>
     )

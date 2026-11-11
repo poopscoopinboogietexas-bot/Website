@@ -6,7 +6,7 @@ About 30 minutes, one time. Everything here is free.
 
 1. Go to [supabase.com](https://supabase.com), sign up with GitHub, and click **New project**. Name it `poop-scoopin-boogie`, pick a strong database password (save it somewhere), region **Central US**.
 2. When it's ready, open **SQL Editor**, click **New query**, paste everything from [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), and click **Run**. You should see "Success". Then do the same with [`supabase/migrations/0002_customers.sql`](supabase/migrations/0002_customers.sql).
-3. Go to **Authentication → Sign In / Providers** and leave "Allow new users to sign up" **on**. Customers need it to log in with an email link. It's safe: a new login only sees the client record with the same email, and only people in the staff list see the route app.
+3. Go to **Authentication → Sign In / Providers** and leave "Allow new users to sign up" **on**, and under **Email** leave **Confirm email** on. Customers make their own email + password login on the sign-up page. It's safe: a new login only sees the client record with the same email, and only people in the staff list see the route app.
 4. Go to **Authentication → Users → Add user → Create new user**. Add yourself and your mom with email and password. Tick "Auto confirm user".
 5. Back in **SQL Editor**, run this once, with your real emails and names:
 
@@ -41,6 +41,21 @@ The public website is the app address itself (home page, `#/faq`, `#/signup`). C
    - `GMAIL_USER` = the business Gmail address
    - `GMAIL_APP_PASSWORD` = the 16-letter app password
 4. In Supabase, go to **Edge Functions → Deploy a new function → Via Editor**. Name it exactly `complete-visit`, paste everything from [`supabase/functions/complete-visit/index.ts`](supabase/functions/complete-visit/index.ts), and click **Deploy**.
+
+### Send account emails from the business Gmail too
+
+Out of the box, "confirm your email" and "reset your password" emails come from Supabase. To send them from `poopscoopinboogietexas@gmail.com` instead:
+
+1. In Supabase, go to **Authentication → Emails → SMTP Settings** and turn on **Enable custom SMTP**:
+   - Sender email: `poopscoopinboogietexas@gmail.com`
+   - Sender name: `Poop Scoopin' Boogie`
+   - Host: `smtp.gmail.com`, Port: `465`
+   - Username: `poopscoopinboogietexas@gmail.com`
+   - Password: the same 16-letter app password
+2. In **Authentication → Emails → Templates**:
+   - **Confirm signup**: subject `Confirm your Poop Scoopin' Boogie account`, body from [`supabase/email-templates/confirm-signup.html`](supabase/email-templates/confirm-signup.html)
+   - **Reset password**: subject `Set a new password for Poop Scoopin' Boogie`, body from [`supabase/email-templates/reset-password.html`](supabase/email-templates/reset-password.html)
+3. In **Authentication → Rate Limits**, raise **emails per hour** to `100`.
 
 ## 4. Turn on online payments (Stripe) — later
 

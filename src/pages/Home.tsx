@@ -14,17 +14,18 @@ export default function Home() {
   const { session, role } = useAuth()
   const navigate = useNavigate()
 
-  // Someone who just tapped their email login link lands here; send them on to their page.
+  // Someone who just tapped an email link (confirm account or reset password) lands here; send them on.
   useEffect(() => {
     if (!session || !role) return
-    let fromLink = false
+    let fromLink: string | null = null
     try {
-      fromLink = sessionStorage.getItem('fromLoginLink') === '1'
+      fromLink = sessionStorage.getItem('fromLoginLink')
       sessionStorage.removeItem('fromLoginLink')
     } catch {
       /* storage blocked */
     }
-    if (fromLink) navigate(role === 'staff' ? '/app' : '/account', { replace: true })
+    if (fromLink === 'recovery') navigate('/reset-password', { replace: true })
+    else if (fromLink) navigate(role === 'staff' ? '/app' : '/account', { replace: true })
   }, [session, role, navigate])
 
   return (
