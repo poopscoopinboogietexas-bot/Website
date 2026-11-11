@@ -24,16 +24,18 @@ About 30 minutes, one time. Everything here is free.
 1. In this GitHub repo, go to **Settings → Secrets and variables → Actions → Variables** and add two repository variables:
    - `SUPABASE_URL` = the Project URL
    - `SUPABASE_ANON_KEY` = the anon public key (this one is safe to be public; the database rules protect your data)
-2. Go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-3. Go to **Actions → Deploy app → Run workflow**. When it turns green, your app is at
-   `https://<your-github-name>.github.io/poop-scoopin-boogie/`.
-4. In Supabase, go to **Authentication → URL Configuration**. Set **Site URL** to that app address and add it under **Redirect URLs** too. This is where customer login links send people.
+2. Go to **Settings → Pages** and set **Source** to **GitHub Actions**. Under **Custom domain**, type `poopscoopinboogie.org` and click **Save**.
+3. In Namecheap, go to **Domain List → Manage** next to `poopscoopinboogie.org` → **Advanced DNS**. Delete the parking records Namecheap added (the `www` CNAME to parkingpage and the `@` URL Redirect), then add:
+   - Four **A Records**, Host `@`, values `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153`
+   - One **CNAME Record**, Host `www`, value `poopscoopinboogietexas-bot.github.io.`
+4. Go to **Actions → Deploy app → Run workflow**. When it turns green and the domain check in **Settings → Pages** passes (can take up to a day), tick **Enforce HTTPS**. Your site is at `https://poopscoopinboogie.org/`.
+5. In Supabase, go to **Authentication → URL Configuration**. Set **Site URL** to `https://poopscoopinboogie.org/` and add it under **Redirect URLs** too. This is where customer login links send people.
 
-The public website is the app address itself (home page, `#/faq`, `#/signup`). Customers sign up at `.../poop-scoopin-boogie/#/signup`. You and your mom use `.../poop-scoopin-boogie/#/app`. Put that link on your flyers and Google profile. New sign-ups show up at the top of the Clients tab.
+The public website is the app address itself (home page, `#/faq`, `#/signup`). Customers sign up at `https://poopscoopinboogie.org/#/signup`. You and your mom use `https://poopscoopinboogie.org/#/app`. Put the sign-up link on your flyers and Google profile. New sign-ups show up at the top of the Clients tab.
 
 ## 3. Turn on customer emails (Gmail)
 
-1. Make a business Gmail, for example `poopscoopinboogie@gmail.com`.
+1. Use the business Gmail, `poopscoopinboogietexas@gmail.com`.
 2. In that Google account, turn on **2-Step Verification**, then go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) and create an app password named "Scoopin app". Copy the 16 letters.
 3. In Supabase, go to **Edge Functions → Secrets** and add:
    - `GMAIL_USER` = the business Gmail address
