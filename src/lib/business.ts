@@ -3,11 +3,15 @@ export const BUSINESS = {
   name: "Poop Scoopin' Boogie",
   city: 'Tyler, TX',
   serviceArea: 'Tyler and nearby (Whitehouse, Bullard, Flint, Lindale). Not sure? Sign up and ask.',
-  // Leave blank to hide. Example: '(903) 555-0100'
-  phone: '',
+  tagline: 'We do your dirty work so you don’t have to.',
+  // Leave blank to hide. Google Voice number that rings both phones.
+  phone: '(903) 347-2494',
   // Leave blank to hide. Example: 'poopscoopinboogie@gmail.com'
   email: 'poopscoopinboogietexas@gmail.com',
 }
+
+/** tel: / sms: link for the business phone, e.g. tel:+19033472494 */
+export const phoneLink = (kind: 'tel' | 'sms' = 'tel') => `${kind}:+1${BUSINESS.phone.replace(/\D/g, '').slice(-10)}`
 
 export const PLANS = [
   {

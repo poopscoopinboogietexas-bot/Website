@@ -241,6 +241,8 @@ textarea { min-height: 72px; resize: vertical; }
 .eyebrow { margin: 0; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 0.8rem; color: var(--denim); }
 .hero-title { font-size: clamp(2.1rem, 6vw, 3.4rem); color: var(--ink); }
 .hero-sub { margin: 0; font-size: 1.1rem; color: var(--ink-soft); max-width: 34rem; }
+.hero-call { margin: 0; font-weight: 700; color: var(--ink-soft); }
+.hero-call a, .site-footer a { color: inherit; }
 .hero-logo { width: 100%; max-width: 420px; justify-self: center; border-radius: 24px; border: 2px solid var(--ink); background: #fff; }
 .btn.big-inline { min-height: 56px; font-size: 1.1rem; padding: 12px 24px; }
 @media (max-width: 760px) {

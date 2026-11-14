@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import PublicLayout from '../components/PublicLayout'
-import { BUSINESS, FAQS } from '../lib/business'
+import { BUSINESS, phoneLink, FAQS } from '../lib/business'
 
 export default function Faq() {
   return (
@@ -19,7 +19,12 @@ export default function Faq() {
           <div className="card flat">
             <h2>Still wondering about something?</h2>
             <p>
-              {BUSINESS.phone ? `Call or text us at ${BUSINESS.phone}, or ` : ''}sign up and put your question in the notes. We’ll get back to you within a day.
+              {BUSINESS.phone && (
+                <>
+                  Call or text us at <a href={phoneLink()}>{BUSINESS.phone}</a>, or{' '}
+                </>
+              )}
+              sign up and put your question in the notes. We’ll get back to you within a day.
             </p>
             <Link to="/signup" className="btn primary">
               Sign up

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import PublicLayout from '../components/PublicLayout'
-import { PLANS as PLAN_INFO } from '../lib/business'
+import { BUSINESS, PLANS as PLAN_INFO } from '../lib/business'
 import { supabase } from '../lib/supabase'
 import { authErrorText, returnUrl } from '../lib/links'
 
@@ -65,7 +65,7 @@ export default function Signup() {
     <main className="page" style={{ paddingBottom: 32 }}>
       <header className="stack" style={{ alignItems: 'center', textAlign: 'center' }}>
         <img src="./logo.png" alt="Poop Scoopin' Boogie" style={{ width: 180 }} />
-        <h1>Let us do the dirty work</h1>
+        <h1>{BUSINESS.tagline}</h1>
         <div className="muted">Weekly dog poop pickup in Tyler, TX. You get a photo of your clean yard and latched gate after every visit.</div>
       </header>
 

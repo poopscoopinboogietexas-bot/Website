@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PublicLayout from '../components/PublicLayout'
 import { useAuth } from '../lib/auth'
-import { BUSINESS, FAQS, PLANS } from '../lib/business'
+import { BUSINESS, phoneLink, FAQS, PLANS } from '../lib/business'
 
 const STEPS = [
   { title: 'Sign up', body: 'Pick a plan and tell us about your yard and dogs. Takes two minutes.' },
@@ -34,7 +34,7 @@ export default function Home() {
         <section className="hero">
           <div className="hero-copy">
             <p className="eyebrow">Dog poop pickup · {BUSINESS.city}</p>
-            <h1 className="hero-title">We scoop the poop so you don’t have to.</h1>
+            <h1 className="hero-title">{BUSINESS.tagline}</h1>
             <p className="hero-sub">
               Weekly yard cleanup from a local mom-and-kid team. Photo proof after every visit, no contracts, and germ-safe tools.
             </p>
@@ -46,6 +46,11 @@ export default function Home() {
                 See prices
               </a>
             </div>
+            {BUSINESS.phone && (
+              <p className="hero-call">
+                Questions? Call or text <a href={phoneLink()}>{BUSINESS.phone}</a>
+              </p>
+            )}
           </div>
           <img className="hero-logo" src="./logo.png" alt="Poop Scoopin' Boogie: a basset hound next to a scooper in pink cowboy boots" />
         </section>
@@ -102,7 +107,7 @@ export default function Home() {
                 <strong>Gate checked twice.</strong> We latch it, check it, and photograph it so your pups stay put.
               </li>
               <li>
-                <strong>Local.</strong> We live in Tyler. You can text a real person.
+                <strong>Local.</strong> We live in Tyler. You can call or text a real person at <a href={phoneLink()}>{BUSINESS.phone}</a>.
               </li>
             </ul>
           </div>

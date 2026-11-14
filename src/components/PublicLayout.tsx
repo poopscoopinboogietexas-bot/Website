@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { BUSINESS } from '../lib/business'
+import { BUSINESS, phoneLink } from '../lib/business'
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   const { session, role } = useAuth()
@@ -28,8 +28,16 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <div>
           <strong>{BUSINESS.name}</strong>
           <div>Dog poop pickup in {BUSINESS.city}</div>
-          {BUSINESS.phone && <div>Call or text {BUSINESS.phone}</div>}
-          {BUSINESS.email && <div>{BUSINESS.email}</div>}
+          {BUSINESS.phone && (
+            <div>
+              Call or text <a href={phoneLink()}>{BUSINESS.phone}</a>
+            </div>
+          )}
+          {BUSINESS.email && (
+            <div>
+              <a href={`mailto:${BUSINESS.email}`}>{BUSINESS.email}</a>
+            </div>
+          )}
         </div>
         <nav className="row" aria-label="Footer">
           <Link to="/signup">Sign up</Link>
