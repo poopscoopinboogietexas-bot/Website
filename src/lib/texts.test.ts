@@ -25,10 +25,10 @@ describe('texts', () => {
 import { cleanupFeeCents } from './business'
 describe('cleanup fee', () => {
   it('follows the tiers, flat for 1–2 dogs', () => {
-    expect(cleanupFeeCents('under_1_week', 4)).toBe(0)
-    expect(cleanupFeeCents('1_2_weeks', 1)).toBe(1500)
-    expect(cleanupFeeCents('2_4_weeks', 2)).toBe(3000)
-    expect(cleanupFeeCents('over_month', 4)).toBe(7000)
+    expect(cleanupFeeCents('under_2_weeks', 4)).toBe(0)
+    expect(cleanupFeeCents('2_4_weeks', 1)).toBe(1500)
+    expect(cleanupFeeCents('1_2_months', 2)).toBe(3000)
+    expect(cleanupFeeCents('over_2_months', 4)).toBe(7000)
     expect(cleanupFeeCents('', 3)).toBe(0)
   })
 })

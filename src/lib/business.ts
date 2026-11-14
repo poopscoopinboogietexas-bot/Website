@@ -29,10 +29,10 @@ export const TEXTS = {
  * Edit amounts here; the sign-up page, FAQ and staff app all read from this.
  */
 export const CLEANUP_FEES = [
-  { value: 'under_1_week', label: 'Within the last week', cents: 0 },
-  { value: '1_2_weeks', label: '1–2 weeks ago', cents: 1500 },
-  { value: '2_4_weeks', label: '2–4 weeks ago', cents: 3000 },
-  { value: 'over_month', label: 'Over a month ago (or never)', cents: 5000 },
+  { value: 'under_2_weeks', label: 'Within the last 2 weeks', cents: 0 },
+  { value: '2_4_weeks', label: '2–4 weeks ago', cents: 1500 },
+  { value: '1_2_months', label: '1–2 months ago', cents: 3000 },
+  { value: 'over_2_months', label: 'Over 2 months ago (or never)', cents: 5000 },
 ] as const
 export const CLEANUP_EXTRA_DOG_CENTS = 1000
 
@@ -90,7 +90,11 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How much does it cost?',
-    a: 'Weekly service is $60 a month for 1 dog, and every other week is $40 a month. Each extra dog adds $10 a month. If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: $15 if it’s been 1–2 weeks, $30 for 2–4 weeks, and $50 for over a month (plus $10 for each dog after 2). If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
+    a: 'Weekly service is $60 a month for 1 dog, and every other week is $40 a month. Each extra dog adds $10 a month. If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: free if it’s been under 2 weeks, $15 for 2–4 weeks, $30 for 1–2 months, and $50 for over 2 months (plus $10 for each dog after 2). If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
+  },
+  {
+    q: 'What if my grass is long?',
+    a: 'Please keep your grass mowed to about 6 inches or shorter on your service day. In tall grass we can’t promise we found everything, so we’ll scoop what we can, text you a photo, and finish up on the next visit after it’s mowed.',
   },
   {
     q: 'Is there a contract?',

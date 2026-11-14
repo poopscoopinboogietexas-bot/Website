@@ -74,7 +74,7 @@ export default function Home() {
                 </article>
               ))}
             </div>
-            <p className="muted center-text">No contracts. Cancel anytime. Yard not cleaned lately? A one-time cleanup fee is added to your first bill: $15 (1–2 weeks), $30 (2–4 weeks) or $50 (over a month).</p>
+            <p className="muted center-text">No contracts. Cancel anytime. Yard not cleaned lately? A one-time cleanup fee is added to your first bill: $15 (2–4 weeks), $30 (1–2 months) or $50 (over 2 months).</p>
           </div>
         </section>
 

@@ -66,7 +66,7 @@ const db: Record<string, Row[]> = {
     { id: uid(), client_id: c1.id, visit_date: daysAgo(7), status: 'complete', checklist: {}, yard_photo_path: 'sample/yard', gate_photo_path: 'sample/gate', notes: '', completed_at: daysAgo(7), emailed_at: daysAgo(7), email_error: null },
   ],
   signups: [
-    { id: uid(), name: 'Jasmine Cole', phone: '(903) 555-0199', email: 'jasmine@example.com', address: '7711 Paluxy Dr, Tyler, TX 75703', dog_count: 2, plan: 'weekly', last_cleaned: '2_4_weeks', initial_fee_cents: 3000, notes: 'Two goldens, side gate code 2580', handled: false, created_at: new Date().toISOString() },
+    { id: uid(), name: 'Jasmine Cole', phone: '(903) 555-0199', email: 'jasmine@example.com', address: '7711 Paluxy Dr, Tyler, TX 75703', dog_count: 2, plan: 'weekly', last_cleaned: '1_2_months', initial_fee_cents: 3000, notes: 'Two goldens, side gate code 2580', handled: false, created_at: new Date().toISOString() },
   ],
   client_notes: [
     { id: uid(), client_id: c2.id, body: 'Soft stool in back corner, texted Marcus a photo', created_at: new Date(Date.now() - 86_400_000 * 2).toISOString() },

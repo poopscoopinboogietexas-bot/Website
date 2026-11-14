@@ -1,7 +1,7 @@
 -- One-time initial cleanup fee for yards that haven't been cleaned in a while.
 -- Safe to run more than once.
 alter table public.signups add column if not exists last_cleaned text not null default ''
-  check (last_cleaned in ('', 'under_1_week', '1_2_weeks', '2_4_weeks', 'over_month'));
+  check (last_cleaned in ('', 'under_2_weeks', '2_4_weeks', '1_2_months', 'over_2_months'));
 alter table public.signups add column if not exists initial_fee_cents integer not null default 0
   check (initial_fee_cents between 0 and 100000);
 
