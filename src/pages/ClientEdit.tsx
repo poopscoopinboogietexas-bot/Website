@@ -18,6 +18,8 @@ import {
 import { cleanupPending } from '../lib/texts'
 import { monthlyPriceCents } from '../lib/business'
 import BestDay from '../components/BestDay'
+import { phoneDigits, smsLink, welcomeEmailLink, welcomeText } from '../lib/texts'
+import { WORK_DAY } from '../lib/business'
 
 type DogDraft = Omit<Dog, 'id' | 'client_id'> & { id?: string }
 type ClientDraft = Omit<Client, 'id' | 'dogs'>
@@ -57,6 +59,7 @@ export default function ClientEdit() {
           plan: signup.plan === 'biweekly' ? 'biweekly' : 'weekly',
           price_cents: monthlyPriceCents(signup.plan === 'biweekly' ? 'biweekly' : 'weekly', signup.dog_count),
           ...(signup.bag_backup ? { bag_backup: signup.bag_backup } : {}),
+          ...(signup.blocked_days?.length ? { blocked_days: signup.blocked_days } : {}),
           instructions: signup.notes,
           ...((signup.initial_fee_cents ?? 0) > 0 ? { initial_fee_cents: signup.initial_fee_cents, initial_fee_paid: false } : {}),
         }
@@ -68,6 +71,9 @@ export default function ClientEdit() {
   const [visits, setVisits] = useState<(Visit & { yardUrl?: string })[]>([])
   const [newNote, setNewNote] = useState('')
   const [saving, setSaving] = useState(false)
+  // Day on file when the page opened; a new or changed day offers a welcome message after saving.
+  const [savedDay, setSavedDay] = useState<number | null>(null)
+  const [welcome, setWelcome] = useState<{ id: string } | null>(null)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -78,6 +84,7 @@ export default function ClientEdit() {
         const { dogs: d, id: _id, ...rest } = c
         void _id
         setForm(rest)
+        setSavedDay(rest.service_day)
         setDogs(d ?? [])
       })
       .catch(() => setError('Could not load this client.'))
@@ -147,12 +154,13 @@ export default function ClientEdit() {
     if (body.initial_fee_cents === undefined) delete body.initial_fee_cents
     if (body.initial_fee_paid === undefined) delete body.initial_fee_paid
     if (body.bag_backup === undefined) delete body.bag_backup
+    if (body.blocked_days === undefined) delete body.blocked_days
     const res = isNew
       ? await supabase.from('clients').insert(body).select('id').single()
       : await supabase.from('clients').update(body).eq('id', clientId!).select('id').single()
     if (res.error) {
       setError(
-        /reminder_texts|done_texts|initial_fee|bag_backup/.test(res.error.message)
+        /reminder_texts|done_texts|initial_fee|bag_backup|blocked_days/.test(res.error.message)
           ? 'Could not save: this needs the database updates on the list in SETUP.md (pending-updates.sql).'
           : 'Could not save. Check that name, address and day are filled in.',
       )
@@ -168,7 +176,11 @@ export default function ClientEdit() {
     }
     if (signup) await supabase.from('signups').update({ handled: true }).eq('id', signup.id)
     setSaving(false)
-    navigate('/app/clients')
+    if (form.status !== 'cancelled' && form.service_day !== savedDay && (form.phone || form.email)) {
+      setSavedDay(form.service_day)
+      setWelcome({ id })
+      window.scrollTo(0, 0)
+    } else navigate('/app/clients')
   }
 
   async function addNote() {
@@ -201,6 +213,26 @@ export default function ClientEdit() {
         )}
       </div>
       <h1>{isNew ? 'New client' : form.name || 'Client'}</h1>
+
+      {welcome && (
+        <section className="card stack" style={{ borderColor: 'var(--pink)' }}>
+          <h2>Saved! Tell {form.name.split(' ')[0]} their day</h2>
+          <div className="text-preview">{welcomeText(form, form.service_day)}</div>
+          {phoneDigits(form.phone) && (
+            <a className="btn primary big" href={smsLink(form.phone, welcomeText(form, form.service_day))}>
+              💬 Text welcome message
+            </a>
+          )}
+          {form.email && (
+            <a className="btn denim" href={welcomeEmailLink(form, form.service_day)}>
+              ✉️ Email welcome message
+            </a>
+          )}
+          <button type="button" className="btn" onClick={() => navigate('/app/clients')}>
+            Done
+          </button>
+        </section>
+      )}
 
       <form className="stack" onSubmit={save}>
         <section className="card">
@@ -321,7 +353,30 @@ export default function ClientEdit() {
               </select>
             </label>
           </div>
-          <BestDay address={form.address} clientId={clientId} onPick={(day) => set('service_day', day)} />
+          {(form.blocked_days ?? []).includes(form.service_day) && (
+            <div className="alert warn">{DAYS[form.service_day]} doesn’t work for them. Pick another day.</div>
+          )}
+          <BestDay address={form.address} clientId={clientId} blockedDays={form.blocked_days ?? []} onPick={(day) => set('service_day', day)} />
+          <div className="field">
+            Days that don’t work for them
+            <div className="row">
+              {WORK_DAY.days.map((d) => (
+                <label key={d} className="check" style={{ padding: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={(form.blocked_days ?? []).includes(d)}
+                    onChange={(e) =>
+                      set(
+                        'blocked_days',
+                        e.target.checked ? [...(form.blocked_days ?? []), d].sort() : (form.blocked_days ?? []).filter((x) => x !== d),
+                      )
+                    }
+                  />
+                  <span>{DAYS[d].slice(0, 3)}</span>
+                </label>
+              ))}
+            </div>
+          </div>
           {form.plan === 'biweekly' && (
             <label className="field">
               First visit date (sets which weeks)

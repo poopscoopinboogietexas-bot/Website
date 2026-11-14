@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import PublicLayout from '../components/PublicLayout'
-import { BUSINESS, CLEANUP_FEES, cleanupFeeCents, PLANS as PLAN_INFO, type LastCleaned } from '../lib/business'
+import { BUSINESS, CLEANUP_FEES, cleanupFeeCents, PLANS as PLAN_INFO, WORK_DAY, type LastCleaned } from '../lib/business'
 import { supabase } from '../lib/supabase'
 import { authErrorText, returnUrl } from '../lib/links'
+import { DAYS } from '../lib/types'
 
 const PLANS = PLAN_INFO.map((p) => ({
   value: p.value,
@@ -14,7 +15,7 @@ const PLANS = PLAN_INFO.map((p) => ({
 export default function Signup() {
   const [params] = useSearchParams()
   const startPlan = PLANS.some((p) => p.value === params.get('plan')) ? params.get('plan')! : 'weekly'
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', dog_count: 1, plan: startPlan, notes: '', bag_backup: '', last_cleaned: '' as LastCleaned | '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', dog_count: 1, plan: startPlan, notes: '', bag_backup: '', blocked_days: [] as number[], last_cleaned: '' as LastCleaned | '' })
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
@@ -22,7 +23,7 @@ export default function Signup() {
   const [done, setDone] = useState<false | 'check-email' | 'ready'>(false)
   const [error, setError] = useState('')
 
-  const set = (k: keyof typeof form, v: string | number) => setForm((f) => ({ ...f, [k]: v }))
+  const set = (k: keyof typeof form, v: string | number | number[]) => setForm((f) => ({ ...f, [k]: v }))
 
   const subscription = form.plan !== 'one_time'
   const fee = subscription ? cleanupFeeCents(form.last_cleaned, form.dog_count) : 0
@@ -54,11 +55,12 @@ export default function Signup() {
     // 2. Send their details to the team (shows up under New sign-ups).
     const details = { ...form, name: form.name.trim(), email, address: form.address.trim(), initial_fee_cents: fee }
     let { error } = await supabase.from('signups').insert(details)
-    if (error && /last_cleaned|initial_fee_cents|bag_backup/.test(error.message)) {
+    if (error && /last_cleaned|initial_fee_cents|bag_backup|blocked_days/.test(error.message)) {
       // Database updates not run yet: put the newer answers in the notes instead.
-      const { last_cleaned, initial_fee_cents, bag_backup, ...rest } = details
+      const { last_cleaned, initial_fee_cents, bag_backup, blocked_days, ...rest } = details
+      const noGo = blocked_days.length ? blocked_days.map((d) => DAYS[d]).join(', ') : 'none'
       const label = CLEANUP_FEES.find((f) => f.value === last_cleaned)?.label ?? 'not answered'
-      const notes = `${rest.notes}\n[Yard last cleaned: ${label}. Cleanup fee: $${initial_fee_cents / 100}. If bin unreachable, leave bags: ${bag_backup || 'not answered'}]`.trim()
+      const notes = `${rest.notes}\n[Yard last cleaned: ${label}. Cleanup fee: $${initial_fee_cents / 100}. If bin unreachable, leave bags: ${bag_backup || 'not answered'}. Days that don’t work: ${noGo}]`.trim()
       ;({ error } = await supabase.from('signups').insert({ ...rest, notes }))
     }
     setBusy(false)
@@ -175,6 +177,25 @@ export default function Signup() {
               </label>
             </div>
             <div className="muted">At least 8 characters. You’ll use your email and this password to log in and see your visit photos.</div>
+            <div className="field">
+              We pick your service day based on your area so our route stays efficient. Are there any days that don’t work for you? (Like trash
+              pickup day.)
+              <div className="row">
+                {WORK_DAY.days.map((d) => (
+                  <label key={d} className="check" style={{ padding: 0 }}>
+                    <input
+                      id={`no-day-${d}`}
+                      type="checkbox"
+                      checked={form.blocked_days.includes(d)}
+                      onChange={(e) =>
+                        set('blocked_days', e.target.checked ? [...form.blocked_days, d].sort() : form.blocked_days.filter((x) => x !== d))
+                      }
+                    />
+                    <span>{DAYS[d].slice(0, 3)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
             <label className="field">
               We double-bag the poop and put it in your outdoor trash bin. If we can’t get to your bin, where should we leave the bags?
               <input id="su-bag-backup" value={form.bag_backup} onChange={(e) => set('bag_backup', e.target.value)} placeholder="Beside the garage, by the side gate…" maxLength={200} required />

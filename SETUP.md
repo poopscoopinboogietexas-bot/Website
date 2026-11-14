@@ -11,6 +11,7 @@ Still to run:
 - [ ] `0003_texts.sql`: text message on/off settings (reminder and "service done")
 - [ ] `0004_initial_cleanup.sql`: initial cleanup fee (sign-up question, first-bill fee)
 - [ ] `0005_bag_backup.sql`: where to leave bags if the trash bin can't be reached
+- [ ] `0006_blocked_days.sql`: days that don't work for a customer (asked at sign-up)
 
 Already run: `0001_init.sql`, `0002_customers.sql`.
 

@@ -42,7 +42,7 @@ function client(over: Row): Row {
 }
 
 const c1 = client({ name: 'Dana Whitfield', address: '4512 Hollytree Dr, Tyler, TX 75703', gate_code: '1987', access_notes: 'Left side gate, latch sticks', route_order: 10, phone: '(903) 555-0142' })
-const c2 = client({ initial_fee_cents: 3000, initial_fee_paid: false, name: 'Marcus Lee', address: '3207 Shiloh Rd, Tyler, TX 75703', instructions: 'Biscuit had diarrhea Monday. Scoop this yard last and spray boots.', route_order: 40, bag_backup: 'Beside the garage' })
+const c2 = client({ blocked_days: [], initial_fee_cents: 3000, initial_fee_paid: false, name: 'Marcus Lee', address: '3207 Shiloh Rd, Tyler, TX 75703', instructions: 'Biscuit had diarrhea Monday. Scoop this yard last and spray boots.', route_order: 40, bag_backup: 'Beside the garage' })
 const c3 = client({ name: 'The Ramirez Family', address: '1820 Copeland Rd, Tyler, TX 75701', gate_code: '4400', route_order: 20, status: 'payment_issue', payment_issue_since: daysAgo(3), price_cents: 10000 })
 const c4 = client({ name: 'Linda Park', address: '905 S Broadway Ave, Tyler, TX 75701', access_notes: 'Back gate by the garage', route_order: 30, plan: 'biweekly', biweekly_anchor: today, price_cents: 6000 })
 const c5 = client({ name: 'Tom Becker', address: '2214 Old Bullard Rd, Tyler, TX 75701', status: 'paused', payment_issue_since: daysAgo(9), phone: '(903) 555-0177' })
@@ -66,7 +66,7 @@ const db: Record<string, Row[]> = {
     { id: uid(), client_id: c1.id, visit_date: daysAgo(7), status: 'complete', checklist: {}, yard_photo_path: 'sample/yard', gate_photo_path: 'sample/gate', notes: '', completed_at: daysAgo(7), emailed_at: daysAgo(7), email_error: null },
   ],
   signups: [
-    { id: uid(), name: 'Jasmine Cole', phone: '(903) 555-0199', email: 'jasmine@example.com', address: '7711 Paluxy Dr, Tyler, TX 75703', dog_count: 2, plan: 'weekly', last_cleaned: '1_2_months', initial_fee_cents: 3000, notes: 'Two goldens, side gate code 2580', handled: false, created_at: new Date().toISOString() },
+    { id: uid(), name: 'Jasmine Cole', phone: '(903) 555-0199', email: 'jasmine@example.com', address: '7711 Paluxy Dr, Tyler, TX 75703', dog_count: 2, plan: 'weekly', last_cleaned: '1_2_months', initial_fee_cents: 3000, blocked_days: [2], notes: 'Two goldens, side gate code 2580', handled: false, created_at: new Date().toISOString() },
   ],
   client_notes: [
     { id: uid(), client_id: c2.id, body: 'Soft stool in back corner, texted Marcus a photo', created_at: new Date(Date.now() - 86_400_000 * 2).toISOString() },

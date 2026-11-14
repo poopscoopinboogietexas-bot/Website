@@ -32,6 +32,8 @@ export interface Client {
   /** One-time cleanup fee for the first bill. Missing until migration 0004 runs. */
   initial_fee_cents?: number
   initial_fee_paid?: boolean
+  /** Weekdays that don't work for them (0 = Sunday). Missing until migration 0006 runs. */
+  blocked_days?: number[]
   /** Where bags go if the trash bin can't be reached. Missing until migration 0005 runs. */
   bag_backup?: string
   reminder_texts?: boolean
@@ -66,6 +68,7 @@ export interface Signup {
   /** Missing until migration 0004 runs. */
   last_cleaned?: string
   bag_backup?: string
+  blocked_days?: number[]
   initial_fee_cents?: number
   created_at: string
 }

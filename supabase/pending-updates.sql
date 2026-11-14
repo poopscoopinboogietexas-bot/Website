@@ -1,7 +1,7 @@
 -- DATABASE UPDATES TO RUN
 -- Everything here is safe to run more than once. Paste this whole file into
 -- Supabase > SQL Editor and click Run, once, when you're done setting up.
--- Included (in order): 0003_texts.sql, 0004_initial_cleanup.sql, 0005_bag_backup.sql
+-- Included (in order): 0003_texts.sql, 0004_initial_cleanup.sql, 0005_bag_backup.sql, 0006_blocked_days.sql
 
 -- Text message preferences per client (reminder the day before, "service done" after).
 -- Paste into Supabase > SQL Editor and click Run. Safe to run more than once.
@@ -44,3 +44,10 @@ alter table public.clients add column if not exists initial_fee_paid boolean not
 alter table public.signups add column if not exists bag_backup text not null default ''
   check (length(bag_backup) <= 200);
 alter table public.clients add column if not exists bag_backup text not null default '';
+
+
+-- ===== 0006_blocked_days.sql =====
+-- Days that don't work for a customer (0 = Sunday ... 6 = Saturday), asked at sign-up.
+-- The business picks the service day by area and avoids these. Safe to run more than once.
+alter table public.signups add column if not exists blocked_days smallint[] not null default '{}';
+alter table public.clients add column if not exists blocked_days smallint[] not null default '{}';

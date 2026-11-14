@@ -19,6 +19,7 @@ export const phoneLink = (kind: 'tel' | 'sms' = 'tel') => `${kind}:+1${BUSINESS.
  */
 export const TEXTS = {
   reminder: 'Hi {first}! Poop Scoopin’ Boogie is coming tomorrow ({day}) to scoop your yard. Please bring your dogs inside (a dog run is OK), leave the gate unlocked, and make sure we can reach your trash bin. Thanks!',
+  welcome: 'Hi {first}! Welcome to Poop Scoopin’ Boogie! Your service day is {day}. The night before, we’ll text you a reminder. Please bring your dogs inside (a dog run is OK) and make sure we can reach your trash bin. After each visit we email you photos of your clean yard and latched gate. Questions? Call or text (903) 347-2494.',
   mow: 'Hi {first}! Poop Scoopin’ Boogie stopped by, but your grass is too tall for us to find everything safely, so we had to skip today. Please mow it before your next visit and we’ll get you all cleaned up. Thanks!',
   done: 'Hi {first}! Your yard is all scooped and the gate is latched. Photos are in your email. Thanks! – Poop Scoopin’ Boogie',
 }
@@ -123,6 +124,10 @@ export const FAQS: { q: string; a: string }[] = [
   {
     q: 'How do I pay?',
     a: 'You pay monthly at the start of the month by card, with automatic payments so you don’t have to think about it. You can update your card or see your visits anytime from your account page.',
+  },
+  {
+    q: 'Can I pick my service day?',
+    a: 'We set your day based on where you live so our route stays tight, and we skip any days you tell us don’t work (like trash day). We’ll text or email you your day before your first visit. We scoop Monday through Friday.',
   },
   {
     q: 'What if it rains?',

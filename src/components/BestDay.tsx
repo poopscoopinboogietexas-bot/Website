@@ -7,7 +7,17 @@ import { DAYS } from '../lib/types'
 type Ranked = ReturnType<typeof rankDays>
 
 /** Suggests the service day whose other yards are closest, so each day stays in one part of town. */
-export default function BestDay({ address, clientId, onPick }: { address: string; clientId?: string; onPick: (day: number) => void }) {
+export default function BestDay({
+  address,
+  clientId,
+  blockedDays = [],
+  onPick,
+}: {
+  address: string
+  clientId?: string
+  blockedDays?: number[]
+  onPick: (day: number) => void
+}) {
   const [ranked, setRanked] = useState<Ranked | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -25,7 +35,7 @@ export default function BestDay({ address, clientId, onPick }: { address: string
       setRanked(
         rankDays(
           home,
-          WORK_DAY.days,
+          WORK_DAY.days.filter((d) => !blockedDays.includes(d)),
           others.filter((c) => points.get(c.address)).map((c) => ({ day: c.service_day, point: points.get(c.address)! })),
         ),
       )
@@ -42,6 +52,7 @@ export default function BestDay({ address, clientId, onPick }: { address: string
         {busy ? 'Checking the map…' : 'Suggest best day'}
       </button>
       {error && <div className="muted">{error}</div>}
+      {ranked && blockedDays.length > 0 && <div className="muted">Skipping days that don’t work for them: {blockedDays.map((d) => DAYS[d]).join(', ')}.</div>}
       {ranked?.map((r, i) => (
         <button key={r.day} type="button" className={`btn small ${i === 0 ? 'primary' : ''}`} onClick={() => onPick(r.day)}>
           {DAYS[r.day]}

@@ -13,6 +13,15 @@ export function reminderText(client: Pick<Client, 'name'>, weekday: number): str
   return fill(TEXTS.reminder, client, DAYS[weekday])
 }
 
+export function welcomeText(client: Pick<Client, 'name'>, weekday: number): string {
+  return fill(TEXTS.welcome, client, DAYS[weekday])
+}
+
+export function welcomeEmailLink(client: Pick<Client, 'name' | 'email'>, weekday: number): string {
+  const subject = `Welcome to Poop Scoopin' Boogie: your service day is ${DAYS[weekday]}`
+  return `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(welcomeText(client, weekday))}`
+}
+
 export function mowText(client: Pick<Client, 'name'>): string {
   return fill(TEXTS.mow, client)
 }
