@@ -17,6 +17,7 @@ import {
 } from '../lib/types'
 import { cleanupPending } from '../lib/texts'
 import { monthlyPriceCents } from '../lib/business'
+import BestDay from '../components/BestDay'
 
 type DogDraft = Omit<Dog, 'id' | 'client_id'> & { id?: string }
 type ClientDraft = Omit<Client, 'id' | 'dogs'>
@@ -320,6 +321,7 @@ export default function ClientEdit() {
               </select>
             </label>
           </div>
+          <BestDay address={form.address} clientId={clientId} onPick={(day) => set('service_day', day)} />
           {form.plan === 'biweekly' && (
             <label className="field">
               First visit date (sets which weeks)

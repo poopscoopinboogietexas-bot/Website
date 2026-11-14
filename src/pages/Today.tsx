@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { fetchClients, fetchVisitsOn } from '../lib/data'
 import { isDueOn, localDate, mapsDirectionsUrl, money, weekdayOf } from '../lib/schedule'
 import { cleanupPending } from '../lib/texts'
-import { fullRouteUrl, geocodeAll, getStartAddress, miles, setStartAddress, shortestOrder, type Point } from '../lib/route'
+import { arrivalTimes, clock, fullRouteUrl, geocodeAll, getStartAddress, miles, setStartAddress, shortestOrder, type Point } from '../lib/route'
+import { WORK_DAY } from '../lib/business'
 import { supabase } from '../lib/supabase'
 import { DAYS, type Client, type Visit } from '../lib/types'
 
@@ -52,7 +53,7 @@ export default function Today() {
   }, [due, start])
 
   const plan = useMemo(() => {
-    if (!points) return { route: due, miles: null as number | null, missing: 0 }
+    if (!points) return { route: due, miles: null as number | null, missing: 0, origin: null as Point | null }
     const origin = (start && points.get(start)) || null
     const located = (cs: Client[]) => cs.filter((c) => points.get(c.address)).map((c) => ({ item: c, point: points.get(c.address)! }))
     const regular = located(due.filter((c) => !cleanupPending(c)))
@@ -70,9 +71,19 @@ export default function Today() {
       if (prev) total += miles(prev, p)
       prev = p
     }
-    return { route, miles: total, missing: unlocated.length }
+    return { route, miles: total, missing: unlocated.length, origin }
   }, [due, points, start])
   const route = plan.route
+  const times = arrivalTimes(
+    plan.origin,
+    route.map((c) => ({
+      point: points?.get(c.address) ?? null,
+      minutes: cleanupPending(c) ? WORK_DAY.minutesFirstCleanup : WORK_DAY.minutesPerYard,
+    })),
+    { startMinutes: WORK_DAY.start, mph: WORK_DAY.mph, roadFactor: WORK_DAY.roadFactor },
+  )
+  const finish = times.length ? times[times.length - 1].leave : null
+  const overflow = times.filter((t) => t.leave > WORK_DAY.end).length
   const callList = clients.filter((c) => c.status === 'paused')
   const visitFor = (id: string) => visits.find((v) => v.client_id === id)
   const doneCount = route.filter((c) => visitFor(c.id)?.status === 'complete').length
@@ -149,6 +160,13 @@ export default function Today() {
             </button>
           </div>
         )}
+        {finish !== null && (
+          <div className={overflow ? 'alert warn' : 'muted'}>
+            {overflow
+              ? `Runs until about ${clock(finish)}. Move ${overflow} yard${overflow === 1 ? '' : 's'} to another day to finish by ${clock(WORK_DAY.end)}.`
+              : `Start ${clock(WORK_DAY.start)}, done about ${clock(finish)}.`}
+          </div>
+        )}
         {route.length > 1 && (
           <a className="btn small denim" href={fullRouteUrl(start, route.filter((c) => visitFor(c.id)?.status !== 'complete').map((c) => c.address))} target="_blank" rel="noopener">
             Open whole route in Google Maps
@@ -183,7 +201,10 @@ export default function Today() {
             <Link key={c.id} to={`/app/job/${c.id}`} className={`card job ${v?.status === 'complete' ? 'complete' : ''}`}>
               <span className="num">{v?.status === 'complete' ? '✓' : i + 1}</span>
               <span className="grow stack" style={{ gap: 4 }}>
-                <strong>{c.name}</strong>
+                <strong>
+                  {c.name}
+                  {times[i] && v?.status !== 'complete' && <span className="muted"> · ~{clock(times[i].arrive)}</span>}
+                </strong>
                 <span className="muted">{c.address}</span>
                 <span className="row" style={{ gap: 6 }}>
                   {(c.dogs ?? []).map((d) => (

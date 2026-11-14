@@ -44,6 +44,17 @@ export function cleanupFeeCents(lastCleaned: LastCleaned | '' | null | undefined
   return base + Math.max(0, dogCount - DOGS_INCLUDED) * CLEANUP_EXTRA_DOG_CENTS
 }
 
+/** Work day used to plan routes and arrival times. Times are minutes after midnight. */
+export const WORK_DAY = {
+  days: [1, 2, 3, 4, 5], // Monday to Friday
+  start: 9 * 60, // 9:00 AM
+  end: 17 * 60, // 5:00 PM
+  minutesPerYard: 15,
+  minutesFirstCleanup: 45,
+  mph: 25, // average town driving speed
+  roadFactor: 1.3, // roads are longer than a straight line
+}
+
 /** Plan prices cover this many dogs; each dog past it adds EXTRA_DOG_CENTS a month. */
 export const DOGS_INCLUDED = 3
 export const EXTRA_DOG_CENTS = 1000

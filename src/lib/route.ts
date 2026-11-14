@@ -144,3 +144,58 @@ export function fullRouteUrl(start: string, addresses: string[]): string {
   if (waypoints.length) params.set('waypoints', waypoints.join('|'))
   return `https://www.google.com/maps/dir/?${params.toString()}`
 }
+
+/** Minutes of driving for a straight-line distance, using the work day's speed and road factor. */
+export function driveMinutes(a: Point, b: Point, mph: number, roadFactor: number): number {
+  return (miles(a, b) * roadFactor * 60) / mph
+}
+
+/** Clock time like 9:05 AM from minutes after midnight. */
+export function clock(minutes: number): string {
+  const m = Math.round(minutes)
+  const h24 = Math.floor(m / 60) % 24
+  const h = h24 % 12 === 0 ? 12 : h24 % 12
+  return `${h}:${String(m % 60).padStart(2, '0')} ${h24 < 12 ? 'AM' : 'PM'}`
+}
+
+/**
+ * Arrival time at each stop, starting at `startMinutes` from `origin`.
+ * Stops without a map point get `unknownDriveMinutes` of driving.
+ */
+export function arrivalTimes(
+  origin: Point | null,
+  stops: { point: Point | null; minutes: number }[],
+  opts: { startMinutes: number; mph: number; roadFactor: number; unknownDriveMinutes?: number },
+): { arrive: number; leave: number }[] {
+  let t = opts.startMinutes
+  let prev = origin
+  return stops.map((s) => {
+    t += prev && s.point ? driveMinutes(prev, s.point, opts.mph, opts.roadFactor) : prev || s.point ? (opts.unknownDriveMinutes ?? 10) : 0
+    const arrive = t
+    t += s.minutes
+    if (s.point) prev = s.point
+    return { arrive, leave: t }
+  })
+}
+
+/**
+ * Which work day a new yard fits best: the day whose other yards are closest to it.
+ * Returns days best first, with the nearest yard's distance and how many yards that day has.
+ */
+export function rankDays(
+  home: Point,
+  days: number[],
+  others: { day: number; point: Point }[],
+): { day: number; nearestMiles: number | null; count: number }[] {
+  return days
+    .map((day) => {
+      const same = others.filter((o) => o.day === day)
+      const nearest = same.length ? Math.min(...same.map((o) => miles(home, o.point))) : null
+      return { day, nearestMiles: nearest, count: same.length }
+    })
+    .sort((a, b) => {
+      // A day with a yard close by beats an empty day; an empty day beats a far-away day (over 5 miles).
+      const score = (x: { nearestMiles: number | null; count: number }) => (x.nearestMiles === null ? 5 : x.nearestMiles)
+      return score(a) - score(b) || a.count - b.count
+    })
+}

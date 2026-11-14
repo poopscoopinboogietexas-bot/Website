@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fullRouteUrl, miles, shortestOrder } from './route'
+import { arrivalTimes, clock, fullRouteUrl, miles, rankDays, shortestOrder } from './route'
 
 describe('route', () => {
   it('measures miles', () => {
@@ -38,5 +38,26 @@ describe('route', () => {
     expect(url).toContain('origin=1+Home+St')
     expect(url).toContain('destination=C+St')
     expect(url).toContain('waypoints=A+St%7CB+St')
+  })
+})
+
+describe('times and days', () => {
+  it('formats clock times', () => {
+    expect(clock(9 * 60)).toBe('9:00 AM')
+    expect(clock(12 * 60 + 5)).toBe('12:05 PM')
+    expect(clock(17 * 60 + 30)).toBe('5:30 PM')
+  })
+  it('adds driving and yard time', () => {
+    const home = { lat: 32.35, lng: -95.3 }
+    const times = arrivalTimes(home, [{ point: home, minutes: 15 }, { point: null, minutes: 15 }], { startMinutes: 540, mph: 25, roadFactor: 1.3 })
+    expect(times[0]).toEqual({ arrive: 540, leave: 555 })
+    expect(times[1]).toEqual({ arrive: 565, leave: 580 })
+  })
+  it('suggests the day with a yard nearby', () => {
+    const home = { lat: 32.35, lng: -95.3 }
+    const near = { lat: 32.351, lng: -95.301 }
+    const far = { lat: 32.5, lng: -95.5 }
+    const ranked = rankDays(home, [1, 2, 3], [{ day: 1, point: far }, { day: 2, point: near }])
+    expect(ranked.map((r) => r.day)).toEqual([2, 3, 1])
   })
 })
