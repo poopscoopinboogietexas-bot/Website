@@ -26,5 +26,5 @@ npm run dev   # needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local
 
 ## Coming next
 
-- Route optimization with the Google Maps Routes API
+- Exact drive-time routing (today: free OpenStreetMap lookups + shortest straight-line order)
 - Stripe monthly autopay, with automatic pause after 7 days unpaid

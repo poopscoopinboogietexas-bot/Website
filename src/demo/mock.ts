@@ -172,6 +172,13 @@ function defaults(table: string): Row {
 const realFetch = window.fetch.bind(window)
 window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
   const url = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url)
+  // Fake map lookups: a stable spot around Tyler for each address.
+  if (url.hostname === 'nominatim.openstreetmap.org') {
+    const q = url.searchParams.get('q') ?? ''
+    let h = 0
+    for (const ch of q) h = (h * 31 + ch.charCodeAt(0)) | 0
+    return reply([{ lat: String(32.35 + ((h & 0xff) / 255 - 0.5) * 0.12), lon: String(-95.3 + (((h >> 8) & 0xff) / 255 - 0.5) * 0.12) }])
+  }
   if (url.pathname === '/rest/v1/rpc/is_staff') return reply(true)
   if (url.pathname.startsWith('/rest/v1/rpc/')) return reply(null, 204)
   if (url.pathname.startsWith('/rest/v1/')) return handleRest(url, init)

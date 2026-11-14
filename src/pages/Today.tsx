@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { fetchClients, fetchVisitsOn } from '../lib/data'
 import { isDueOn, localDate, mapsDirectionsUrl, money, weekdayOf } from '../lib/schedule'
 import { cleanupPending } from '../lib/texts'
+import { fullRouteUrl, geocodeAll, getStartAddress, miles, setStartAddress, shortestOrder, type Point } from '../lib/route'
 import { supabase } from '../lib/supabase'
 import { DAYS, type Client, type Visit } from '../lib/types'
 
@@ -24,14 +25,54 @@ export default function Today() {
       .finally(() => setLoading(false))
   }, [today])
 
-  // Big first-time cleanups go last so they don't hold up the rest of the route.
-  const route = useMemo(
+  const [start, setStartState] = useState(getStartAddress)
+  const [draftStart, setDraftStart] = useState(start)
+  const [editingStart, setEditingStart] = useState(false)
+  const [points, setPoints] = useState<Map<string, Point | null> | null>(null)
+
+  // Saved order first (big first-time cleanups last so they don't hold up the rest).
+  const due = useMemo(
     () =>
       clients
         .filter((c) => isDueOn(c, today))
         .sort((a, b) => Number(cleanupPending(a)) - Number(cleanupPending(b))),
     [clients, today],
   )
+
+  // Look up every address (cached on this phone), then plan the shortest drive.
+  useEffect(() => {
+    if (due.length === 0) return
+    let cancelled = false
+    geocodeAll([...(start ? [start] : []), ...due.map((c) => c.address)]).then((m) => {
+      if (!cancelled) setPoints(m)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [due, start])
+
+  const plan = useMemo(() => {
+    if (!points) return { route: due, miles: null as number | null, missing: 0 }
+    const origin = (start && points.get(start)) || null
+    const located = (cs: Client[]) => cs.filter((c) => points.get(c.address)).map((c) => ({ item: c, point: points.get(c.address)! }))
+    const regular = located(due.filter((c) => !cleanupPending(c)))
+    const cleanups = located(due.filter((c) => cleanupPending(c)))
+    const first = shortestOrder(origin, regular)
+    const lastPoint = first.length ? points.get(first[first.length - 1].address)! : origin
+    const second = shortestOrder(lastPoint, cleanups)
+    const unlocated = due.filter((c) => !points.get(c.address))
+    // Addresses the map couldn't find keep their saved order, before the cleanups.
+    const route = [...first, ...unlocated.filter((c) => !cleanupPending(c)), ...second, ...unlocated.filter((c) => cleanupPending(c))]
+    let total = 0
+    let prev = origin
+    for (const c of [...first, ...second]) {
+      const p = points.get(c.address)!
+      if (prev) total += miles(prev, p)
+      prev = p
+    }
+    return { route, miles: total, missing: unlocated.length }
+  }, [due, points, start])
+  const route = plan.route
   const callList = clients.filter((c) => c.status === 'paused')
   const visitFor = (id: string) => visits.find((v) => v.client_id === id)
   const doneCount = route.filter((c) => visitFor(c.id)?.status === 'complete').length
@@ -78,6 +119,42 @@ export default function Today() {
           ))}
         </section>
       )}
+
+      <section className="card flat stack" style={{ gap: 6 }}>
+        {editingStart ? (
+          <form
+            className="stack"
+            onSubmit={(e) => {
+              e.preventDefault()
+              setStartAddress(draftStart)
+              setStartState(draftStart.trim())
+              setEditingStart(false)
+            }}
+          >
+            <label className="field">
+              Where do you leave from? (saved on this phone only)
+              <input id="start-address" value={draftStart} onChange={(e) => setDraftStart(e.target.value)} placeholder="123 Oak St, Tyler, TX" autoComplete="street-address" />
+            </label>
+            <button className="btn small">Save</button>
+          </form>
+        ) : (
+          <div className="row between">
+            <span className="muted grow">
+              {route.length > 0 && plan.miles !== null ? `Shortest route: about ${Math.round(plan.miles)} mi` : 'Planning route…'}
+              {start ? ` from ${start}` : ''}
+              {plan.missing > 0 ? ` · couldn’t find ${plan.missing} address${plan.missing === 1 ? '' : 'es'} on the map` : ''}
+            </span>
+            <button type="button" className="btn small" onClick={() => setEditingStart(true)}>
+              {start ? 'Change start' : 'Set start'}
+            </button>
+          </div>
+        )}
+        {route.length > 1 && (
+          <a className="btn small denim" href={fullRouteUrl(start, route.filter((c) => visitFor(c.id)?.status !== 'complete').map((c) => c.address))} target="_blank" rel="noopener">
+            Open whole route in Google Maps
+          </a>
+        )}
+      </section>
 
       {next ? (
         <button className="btn primary big" onClick={goNext}>
