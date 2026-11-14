@@ -1,5 +1,17 @@
 # Setting up Poop Scoopin' Boogie
 
+## Database updates to run
+
+New features sometimes need a database change. They pile up here so you can run them all in one sitting:
+paste everything from [`supabase/pending-updates.sql`](supabase/pending-updates.sql) into **Supabase → SQL Editor** and click **Run**.
+It's safe to run more than once. Until then the site still works; the new on/off settings just won't save.
+
+Still to run:
+
+- [ ] `0003_texts.sql`: text message on/off settings (reminder and "service done")
+
+Already run: `0001_init.sql`, `0002_customers.sql`.
+
 About 30 minutes, one time. Everything here is free.
 
 ## 1. Make the database (Supabase)
