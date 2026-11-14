@@ -14,7 +14,7 @@ const PLANS = PLAN_INFO.map((p) => ({
 export default function Signup() {
   const [params] = useSearchParams()
   const startPlan = PLANS.some((p) => p.value === params.get('plan')) ? params.get('plan')! : 'weekly'
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', dog_count: 1, plan: startPlan, notes: '', last_cleaned: '' as LastCleaned | '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', dog_count: 1, plan: startPlan, notes: '', bag_backup: '', last_cleaned: '' as LastCleaned | '' })
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
@@ -54,11 +54,11 @@ export default function Signup() {
     // 2. Send their details to the team (shows up under New sign-ups).
     const details = { ...form, name: form.name.trim(), email, address: form.address.trim(), initial_fee_cents: fee }
     let { error } = await supabase.from('signups').insert(details)
-    if (error && /last_cleaned|initial_fee_cents/.test(error.message)) {
-      // Database update 0004 not run yet: put the answer in the notes instead.
-      const { last_cleaned, initial_fee_cents, ...rest } = details
+    if (error && /last_cleaned|initial_fee_cents|bag_backup/.test(error.message)) {
+      // Database updates not run yet: put the newer answers in the notes instead.
+      const { last_cleaned, initial_fee_cents, bag_backup, ...rest } = details
       const label = CLEANUP_FEES.find((f) => f.value === last_cleaned)?.label ?? 'not answered'
-      const notes = `${rest.notes}\n[Yard last cleaned: ${label}. Cleanup fee: $${initial_fee_cents / 100}]`.trim()
+      const notes = `${rest.notes}\n[Yard last cleaned: ${label}. Cleanup fee: $${initial_fee_cents / 100}. If bin unreachable, leave bags: ${bag_backup || 'not answered'}]`.trim()
       ;({ error } = await supabase.from('signups').insert({ ...rest, notes }))
     }
     setBusy(false)
@@ -175,6 +175,10 @@ export default function Signup() {
               </label>
             </div>
             <div className="muted">At least 8 characters. You’ll use your email and this password to log in and see your visit photos.</div>
+            <label className="field">
+              We double-bag the poop and put it in your outdoor trash bin. If we can’t get to your bin, where should we leave the bags?
+              <input id="su-bag-backup" value={form.bag_backup} onChange={(e) => set('bag_backup', e.target.value)} placeholder="Beside the garage, by the side gate…" maxLength={200} required />
+            </label>
             <label className="field">
               Anything we should know? (gate, dog names, sick pups)
               <textarea id="su-notes" value={form.notes} onChange={(e) => set('notes', e.target.value)} maxLength={1000} />

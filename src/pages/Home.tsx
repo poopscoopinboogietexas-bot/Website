@@ -36,7 +36,7 @@ export default function Home() {
             <p className="eyebrow">Dog poop pickup · {BUSINESS.city}</p>
             <h1 className="hero-title">{BUSINESS.tagline}</h1>
             <p className="hero-sub">
-              Weekly yard cleanup from a local mom-and-kid team. Photo proof after every visit, no contracts, and germ-safe tools.
+              Weekly yard cleanup from a family-operated local business. Photo proof after every visit, no contracts, and germ-safe tools.
             </p>
             <div className="row">
               <Link to="/signup" className="btn primary big-inline">

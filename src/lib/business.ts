@@ -18,14 +18,14 @@ export const phoneLink = (kind: 'tel' | 'sms' = 'tel') => `${kind}:+1${BUSINESS.
  * {first} = customer's first name, {day} = weekday name.
  */
 export const TEXTS = {
-  reminder: 'Hi {first}! Poop Scoopin’ Boogie is coming tomorrow ({day}) to scoop your yard. Please leave the gate unlocked, keep shy pups inside, and make sure we can reach your trash bin. Thanks!',
-  reminderTakeAway: 'Hi {first}! Poop Scoopin’ Boogie is coming tomorrow ({day}) to scoop your yard. Please leave the gate unlocked and keep shy pups inside. Thanks!',
+  reminder: 'Hi {first}! Poop Scoopin’ Boogie is coming tomorrow ({day}) to scoop your yard. Please bring your dogs inside (a dog run is OK), leave the gate unlocked, and make sure we can reach your trash bin. Thanks!',
+  mow: 'Hi {first}! Poop Scoopin’ Boogie stopped by, but your grass is too tall for us to find everything safely, so we had to skip today. Please mow it before your next visit and we’ll get you all cleaned up. Thanks!',
   done: 'Hi {first}! Your yard is all scooped and the gate is latched. Photos are in your email. Thanks! – Poop Scoopin’ Boogie',
 }
 
 /**
  * One-time initial cleanup fee, by how long since the yard was last cleaned.
- * Flat for 1–2 dogs; each dog after 2 adds EXTRA_DOG_CENTS (only when there is a fee).
+ * Flat for 1–3 dogs; each dog after 3 adds CLEANUP_EXTRA_DOG_CENTS (only when there is a fee).
  * Edit amounts here; the sign-up page, FAQ and staff app all read from this.
  */
 export const CLEANUP_FEES = [
@@ -41,7 +41,16 @@ export type LastCleaned = (typeof CLEANUP_FEES)[number]['value']
 export function cleanupFeeCents(lastCleaned: LastCleaned | '' | null | undefined, dogCount: number): number {
   const base = CLEANUP_FEES.find((f) => f.value === lastCleaned)?.cents ?? 0
   if (base === 0) return 0
-  return base + Math.max(0, dogCount - 2) * CLEANUP_EXTRA_DOG_CENTS
+  return base + Math.max(0, dogCount - DOGS_INCLUDED) * CLEANUP_EXTRA_DOG_CENTS
+}
+
+/** Plan prices cover this many dogs; each dog past it adds EXTRA_DOG_CENTS a month. */
+export const DOGS_INCLUDED = 3
+export const EXTRA_DOG_CENTS = 1000
+export const PLAN_BASE_CENTS = { weekly: 6000, biweekly: 4000 } as const
+
+export function monthlyPriceCents(plan: 'weekly' | 'biweekly', dogCount: number): number {
+  return PLAN_BASE_CENTS[plan] + Math.max(0, dogCount - DOGS_INCLUDED) * EXTRA_DOG_CENTS
 }
 
 export const PLANS = [
@@ -50,7 +59,7 @@ export const PLANS = [
     name: 'Weekly',
     price: '$60',
     per: '/month',
-    detail: 'Once a week, 1 dog. +$10/month for each extra dog.',
+    detail: 'Once a week, 1–3 dogs. +$10/month for each dog after 3.',
     popular: true,
   },
   {
@@ -58,7 +67,7 @@ export const PLANS = [
     name: 'Every other week',
     price: '$40',
     per: '/month',
-    detail: 'Every two weeks, 1 dog. +$10/month for each extra dog.',
+    detail: 'Every two weeks, 1–3 dogs. +$10/month for each dog after 3.',
     popular: false,
   },
   {
@@ -78,11 +87,11 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'What about my dogs?',
-    a: 'Friendly dogs can stay out, and we’ll probably make friends. If your dog is nervous around strangers, keep them inside on your service day. We never go in a yard with a loose dog we haven’t met.',
+    a: 'Please bring your dogs inside on your service day. Friendly dogs can stay out if they’re on a dog run, but we don’t go in a yard with a loose dog. We don’t want to be the reason your pup gets out.',
   },
   {
     q: 'What do you do with the poop?',
-    a: 'We double-bag it and put it in your outdoor trash bin. If you’d rather we take it with us, just tell us when you sign up.',
+    a: 'We double-bag it and put it in your outdoor trash bin. If we can’t get to your bin, we leave the bags where you told us to when you signed up.',
   },
   {
     q: 'Can you spread germs between yards?',
@@ -90,11 +99,11 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How much does it cost?',
-    a: 'Weekly service is $60 a month for 1 dog, and every other week is $40 a month. Each extra dog adds $10 a month. If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: free if it’s been under 2 weeks, $15 for 2–4 weeks, $30 for 1–2 months, and $50 for over 2 months (plus $10 for each dog after 2). If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
+    a: 'Weekly service is $60 a month and every other week is $40 a month, for 1–3 dogs. Each dog after 3 adds $10 a month (so 4 dogs is $70 or $50). If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: free if it’s been under 2 weeks, $15 for 2–4 weeks, $30 for 1–2 months, and $50 for over 2 months (plus $10 for each dog after 3). If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
   },
   {
     q: 'What if my grass is long?',
-    a: 'Please keep your grass mowed to about 6 inches or shorter on your service day. In tall grass we can’t promise we found everything, so we’ll scoop what we can, text you a photo, and finish up on the next visit after it’s mowed.',
+    a: 'Please keep your grass mowed. Over about 6 inches, we can’t promise we’ll find every pile. Over 12 inches, we have to skip that visit and we’ll text you to mow. There’s no extra fee, and we’ll be back on your next service day.',
   },
   {
     q: 'Is there a contract?',
@@ -106,7 +115,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'What if it rains?',
-    a: 'Light rain doesn’t stop us. If there’s a storm, lightning, or ice, we’ll come the next good day and text you.',
+    a: 'Light rain doesn’t stop us. If there’s a storm, lightning, or ice, we’ll come the next good day and email you to let you know.',
   },
   {
     q: 'Where do you work?',
@@ -114,6 +123,6 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Who are you?',
-    a: 'We’re a mom-and-kid team from Tyler. We started Poop Scoopin’ Boogie so you can enjoy your yard instead of cleaning it.',
+    a: 'We’re a mom and son local business from Tyler, family operated from day one. We started Poop Scoopin’ Boogie so you can enjoy your yard instead of cleaning it.',
   },
 ]

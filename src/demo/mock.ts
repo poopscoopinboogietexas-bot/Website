@@ -42,7 +42,7 @@ function client(over: Row): Row {
 }
 
 const c1 = client({ name: 'Dana Whitfield', address: '4512 Hollytree Dr, Tyler, TX 75703', gate_code: '1987', access_notes: 'Left side gate, latch sticks', route_order: 10, phone: '(903) 555-0142' })
-const c2 = client({ initial_fee_cents: 3000, initial_fee_paid: false, name: 'Marcus Lee', address: '3207 Shiloh Rd, Tyler, TX 75703', instructions: 'Biscuit had diarrhea Monday. Scoop this yard last and spray boots.', route_order: 40, bag_disposal: 'take_away' })
+const c2 = client({ initial_fee_cents: 3000, initial_fee_paid: false, name: 'Marcus Lee', address: '3207 Shiloh Rd, Tyler, TX 75703', instructions: 'Biscuit had diarrhea Monday. Scoop this yard last and spray boots.', route_order: 40, bag_backup: 'Beside the garage' })
 const c3 = client({ name: 'The Ramirez Family', address: '1820 Copeland Rd, Tyler, TX 75701', gate_code: '4400', route_order: 20, status: 'payment_issue', payment_issue_since: daysAgo(3), price_cents: 10000 })
 const c4 = client({ name: 'Linda Park', address: '905 S Broadway Ave, Tyler, TX 75701', access_notes: 'Back gate by the garage', route_order: 30, plan: 'biweekly', biweekly_anchor: today, price_cents: 6000 })
 const c5 = client({ name: 'Tom Becker', address: '2214 Old Bullard Rd, Tyler, TX 75701', status: 'paused', payment_issue_since: daysAgo(9), phone: '(903) 555-0177' })

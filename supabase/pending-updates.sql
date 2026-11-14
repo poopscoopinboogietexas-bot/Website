@@ -1,7 +1,7 @@
 -- DATABASE UPDATES TO RUN
 -- Everything here is safe to run more than once. Paste this whole file into
 -- Supabase > SQL Editor and click Run, once, when you're done setting up.
--- Included (in order): 0003_texts.sql, 0004_initial_cleanup.sql
+-- Included (in order): 0003_texts.sql, 0004_initial_cleanup.sql, 0005_bag_backup.sql
 
 -- Text message preferences per client (reminder the day before, "service done" after).
 -- Paste into Supabase > SQL Editor and click Run. Safe to run more than once.
@@ -36,3 +36,11 @@ alter table public.signups add column if not exists initial_fee_cents integer no
 alter table public.clients add column if not exists initial_fee_cents integer not null default 0
   check (initial_fee_cents >= 0);
 alter table public.clients add column if not exists initial_fee_paid boolean not null default false;
+
+
+-- ===== 0005_bag_backup.sql =====
+-- Where to leave the bagged poop if the trash bin can't be reached (asked at sign-up).
+-- Safe to run more than once.
+alter table public.signups add column if not exists bag_backup text not null default ''
+  check (length(bag_backup) <= 200);
+alter table public.clients add column if not exists bag_backup text not null default '';

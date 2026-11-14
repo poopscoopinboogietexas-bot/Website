@@ -3,13 +3,10 @@ import { doneText, phoneDigits, reminderText, smsLink } from './texts'
 
 describe('texts', () => {
   it('uses the first name and the weekday', () => {
-    const t = reminderText({ name: 'Dana Whitfield', bag_disposal: 'client_bin' }, 2)
+    const t = reminderText({ name: 'Dana Whitfield' }, 2)
     expect(t).toContain('Hi Dana!')
     expect(t).toContain('(Tuesday)')
     expect(t).toContain('trash bin')
-  })
-  it('skips the trash bin line when we take the bags', () => {
-    expect(reminderText({ name: 'Marcus Lee', bag_disposal: 'take_away' }, 1)).not.toContain('trash')
   })
   it('keeps family names whole', () => {
     expect(doneText({ name: 'The Ramirez Family' })).toContain('Hi Ramirez Family!')
@@ -27,8 +24,17 @@ describe('cleanup fee', () => {
   it('follows the tiers, flat for 1–2 dogs', () => {
     expect(cleanupFeeCents('under_2_weeks', 4)).toBe(0)
     expect(cleanupFeeCents('2_4_weeks', 1)).toBe(1500)
-    expect(cleanupFeeCents('1_2_months', 2)).toBe(3000)
-    expect(cleanupFeeCents('over_2_months', 4)).toBe(7000)
+    expect(cleanupFeeCents('1_2_months', 3)).toBe(3000)
+    expect(cleanupFeeCents('over_2_months', 5)).toBe(7000)
     expect(cleanupFeeCents('', 3)).toBe(0)
+  })
+})
+
+import { monthlyPriceCents } from './business'
+describe('monthly price', () => {
+  it('covers 1–3 dogs, then $10 each', () => {
+    expect(monthlyPriceCents('weekly', 3)).toBe(6000)
+    expect(monthlyPriceCents('weekly', 4)).toBe(7000)
+    expect(monthlyPriceCents('biweekly', 5)).toBe(6000)
   })
 })

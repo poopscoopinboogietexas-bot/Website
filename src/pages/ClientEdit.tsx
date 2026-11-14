@@ -16,6 +16,7 @@ import {
   type Visit,
 } from '../lib/types'
 import { cleanupPending } from '../lib/texts'
+import { monthlyPriceCents } from '../lib/business'
 
 type DogDraft = Omit<Dog, 'id' | 'client_id'> & { id?: string }
 type ClientDraft = Omit<Client, 'id' | 'dogs'>
@@ -53,7 +54,8 @@ export default function ClientEdit() {
           email: signup.email,
           address: signup.address,
           plan: signup.plan === 'biweekly' ? 'biweekly' : 'weekly',
-          price_cents: (signup.plan === 'biweekly' ? 4000 : 6000) + Math.max(0, signup.dog_count - 1) * 1000,
+          price_cents: monthlyPriceCents(signup.plan === 'biweekly' ? 'biweekly' : 'weekly', signup.dog_count),
+          ...(signup.bag_backup ? { bag_backup: signup.bag_backup } : {}),
           instructions: signup.notes,
           ...((signup.initial_fee_cents ?? 0) > 0 ? { initial_fee_cents: signup.initial_fee_cents, initial_fee_paid: false } : {}),
         }
@@ -143,12 +145,13 @@ export default function ClientEdit() {
     if (body.done_texts === undefined) delete body.done_texts
     if (body.initial_fee_cents === undefined) delete body.initial_fee_cents
     if (body.initial_fee_paid === undefined) delete body.initial_fee_paid
+    if (body.bag_backup === undefined) delete body.bag_backup
     const res = isNew
       ? await supabase.from('clients').insert(body).select('id').single()
       : await supabase.from('clients').update(body).eq('id', clientId!).select('id').single()
     if (res.error) {
       setError(
-        /reminder_texts|done_texts|initial_fee/.test(res.error.message)
+        /reminder_texts|done_texts|initial_fee|bag_backup/.test(res.error.message)
           ? 'Could not save: this needs the database updates on the list in SETUP.md (pending-updates.sql).'
           : 'Could not save. Check that name, address and day are filled in.',
       )
@@ -237,11 +240,8 @@ export default function ClientEdit() {
               <input id="gate_code" value={form.gate_code} onChange={(e) => set('gate_code', e.target.value)} />
             </label>
             <label className="field">
-              Bags go
-              <select id="bag_disposal" value={form.bag_disposal} onChange={(e) => set('bag_disposal', e.target.value as ClientDraft['bag_disposal'])}>
-                <option value="client_bin">In client’s trash bin</option>
-                <option value="take_away">We take them</option>
-              </select>
+              If the trash bin isn’t reachable, leave bags
+              <input id="bag_backup" value={form.bag_backup ?? ''} onChange={(e) => set('bag_backup', e.target.value)} placeholder="Beside the garage" />
             </label>
           </div>
           <label className="field">

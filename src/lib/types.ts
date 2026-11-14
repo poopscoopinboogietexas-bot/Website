@@ -32,6 +32,8 @@ export interface Client {
   /** One-time cleanup fee for the first bill. Missing until migration 0004 runs. */
   initial_fee_cents?: number
   initial_fee_paid?: boolean
+  /** Where bags go if the trash bin can't be reached. Missing until migration 0005 runs. */
+  bag_backup?: string
   reminder_texts?: boolean
   /** Text "service done" after each visit. Missing until migration 0003 runs; treat missing as on. */
   done_texts?: boolean
@@ -63,6 +65,7 @@ export interface Signup {
   notes: string
   /** Missing until migration 0004 runs. */
   last_cleaned?: string
+  bag_backup?: string
   initial_fee_cents?: number
   created_at: string
 }

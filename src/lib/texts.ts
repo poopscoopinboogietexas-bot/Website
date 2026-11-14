@@ -9,8 +9,12 @@ const firstName = (name: string) => {
 const fill = (template: string, client: Pick<Client, 'name'>, day = '') =>
   template.replaceAll('{first}', firstName(client.name)).replaceAll('{day}', day)
 
-export function reminderText(client: Pick<Client, 'name' | 'bag_disposal'>, weekday: number): string {
-  return fill(client.bag_disposal === 'take_away' ? TEXTS.reminderTakeAway : TEXTS.reminder, client, DAYS[weekday])
+export function reminderText(client: Pick<Client, 'name'>, weekday: number): string {
+  return fill(TEXTS.reminder, client, DAYS[weekday])
+}
+
+export function mowText(client: Pick<Client, 'name'>): string {
+  return fill(TEXTS.mow, client)
 }
 
 export function doneText(client: Pick<Client, 'name'>): string {

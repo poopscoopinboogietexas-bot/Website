@@ -6,7 +6,7 @@ import { localDate, mapsDirectionsUrl } from '../lib/schedule'
 import { ARRIVAL_CHECKLIST, FINISH_CHECKLIST } from '../lib/sop'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { TEMPERAMENT_LABEL, type Client, type Visit } from '../lib/types'
-import { cleanupPending, copyText, doneText, phoneDigits, smsLink, wantsDoneText } from '../lib/texts'
+import { cleanupPending, copyText, doneText, mowText, phoneDigits, smsLink, wantsDoneText } from '../lib/texts'
 import CleanupPrice from '../components/CleanupPrice'
 
 type PhotoKind = 'yard' | 'gate'
@@ -128,6 +128,16 @@ export default function Job() {
         {client.status === 'payment_issue' && <span className="pill payment_issue">Payment issue</span>}
       </div>
 
+      {visit?.status !== 'complete' && phoneDigits(client.phone) && (
+        <details className="card flat">
+          <summary>Grass over 12 inches? Skip and text them to mow</summary>
+          <div className="text-preview">{mowText(client)}</div>
+          <a className="btn" href={smsLink(client.phone, mowText(client))}>
+            💬 Text {client.name.split(' ')[0]} to mow
+          </a>
+        </details>
+      )}
+
       {cleanupPending(client) && visit?.status !== 'complete' && (
         <CleanupPrice client={client} onSaved={(cents) => setClient({ ...client, initial_fee_cents: cents })} />
       )}
@@ -152,7 +162,10 @@ export default function Job() {
             </>
           )}
           <dt>Bags</dt>
-          <dd>{client.bag_disposal === 'client_bin' ? 'In the client’s trash bin' : 'Take them with you'}</dd>
+          <dd>
+            Double-bag, outdoor trash bin.
+            {client.bag_backup ? ` If you can’t reach it: ${client.bag_backup}.` : ''}
+          </dd>
           {client.phone && (
             <>
               <dt>Phone</dt>

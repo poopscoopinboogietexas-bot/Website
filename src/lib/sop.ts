@@ -23,7 +23,7 @@ export const SOPS: SopSection[] = [
     title: 'Dogs and gates',
     steps: [
       'Look over the fence and make noise before opening the gate.',
-      'Never enter with a dog loose unless the client said it is friendly and you have met it. If unsure, text the client and move on.',
+      'Never enter with a loose dog. Friendly dogs on a dog run are OK. If a dog is loose, text the client and move on to the next house.',
       'Close and latch the gate behind you, and check it again when you leave.',
       'If a dog acts aggressive, do not run or turn your back. Back out slowly with the bucket between you and the dog.',
       'If bitten: wash with soap and water for 5 minutes, get the rabies vaccine status from the owner, and see a doctor the same day.',
