@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { fetchClients, fetchVisitsOn } from '../lib/data'
-import { isDueOn, localDate, mapsDirectionsUrl, weekdayOf } from '../lib/schedule'
+import { isDueOn, localDate, mapsDirectionsUrl, money, weekdayOf } from '../lib/schedule'
+import { cleanupPending } from '../lib/texts'
 import { supabase } from '../lib/supabase'
 import { DAYS, type Client, type Visit } from '../lib/types'
 
@@ -23,7 +24,14 @@ export default function Today() {
       .finally(() => setLoading(false))
   }, [today])
 
-  const route = useMemo(() => clients.filter((c) => isDueOn(c, today)), [clients, today])
+  // Big first-time cleanups go last so they don't hold up the rest of the route.
+  const route = useMemo(
+    () =>
+      clients
+        .filter((c) => isDueOn(c, today))
+        .sort((a, b) => Number(cleanupPending(a)) - Number(cleanupPending(b))),
+    [clients, today],
+  )
   const callList = clients.filter((c) => c.status === 'paused')
   const visitFor = (id: string) => visits.find((v) => v.client_id === id)
   const doneCount = route.filter((c) => visitFor(c.id)?.status === 'complete').length
@@ -107,6 +115,7 @@ export default function Today() {
                     </span>
                   ))}
                   {c.status === 'payment_issue' && <span className="pill payment_issue">Payment issue</span>}
+                  {cleanupPending(c) && <span className="pill doing">Initial cleanup +{money(c.initial_fee_cents ?? 0)}</span>}
                   {v?.status === 'in_progress' && <span className="pill doing">In progress</span>}
                 </span>
               </span>

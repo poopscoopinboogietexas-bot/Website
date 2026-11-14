@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { fetchClient } from '../lib/data'
-import { localDate, mapsDirectionsUrl } from '../lib/schedule'
+import { localDate, mapsDirectionsUrl, money } from '../lib/schedule'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import {
   DAYS,
@@ -15,6 +15,7 @@ import {
   type Temperament,
   type Visit,
 } from '../lib/types'
+import { cleanupPending } from '../lib/texts'
 
 type DogDraft = Omit<Dog, 'id' | 'client_id'> & { id?: string }
 type ClientDraft = Omit<Client, 'id' | 'dogs'>
@@ -54,6 +55,7 @@ export default function ClientEdit() {
           plan: signup.plan === 'biweekly' ? 'biweekly' : 'weekly',
           price_cents: (signup.plan === 'biweekly' ? 4000 : 6000) + Math.max(0, signup.dog_count - 1) * 1000,
           instructions: signup.notes,
+          ...((signup.initial_fee_cents ?? 0) > 0 ? { initial_fee_cents: signup.initial_fee_cents, initial_fee_paid: false } : {}),
         }
       : BLANK,
   )
@@ -122,6 +124,8 @@ export default function ClientEdit() {
       paid_through: localDate(end),
       status: f.status === 'cancelled' ? f.status : 'active',
       payment_issue_since: null,
+      // The one-time cleanup fee rides on the first payment only.
+      ...((f.initial_fee_cents ?? 0) > 0 ? { initial_fee_paid: true } : {}),
     }))
     setMessage('Marked paid through the end of this month. Tap Save to keep it.')
   }
@@ -137,13 +141,15 @@ export default function ClientEdit() {
     // Text settings only exist once migration 0003 has run; leave them out until they're set.
     if (body.reminder_texts === undefined) delete body.reminder_texts
     if (body.done_texts === undefined) delete body.done_texts
+    if (body.initial_fee_cents === undefined) delete body.initial_fee_cents
+    if (body.initial_fee_paid === undefined) delete body.initial_fee_paid
     const res = isNew
       ? await supabase.from('clients').insert(body).select('id').single()
       : await supabase.from('clients').update(body).eq('id', clientId!).select('id').single()
     if (res.error) {
       setError(
-        /reminder_texts|done_texts/.test(res.error.message)
-          ? 'Could not save the text settings: the database needs one more setup step (0003_texts.sql).'
+        /reminder_texts|done_texts|initial_fee/.test(res.error.message)
+          ? 'Could not save: this needs the database updates on the list in SETUP.md (pending-updates.sql).'
           : 'Could not save. Check that name, address and day are filled in.',
       )
       setSaving(false)
@@ -357,6 +363,30 @@ export default function ClientEdit() {
             </select>
           </label>
           <div className="muted">Paused clients drop off the route and show up on the Call list.</div>
+          <div className="grid2">
+            <label className="field">
+              Initial cleanup fee ($, one time)
+              <input
+                id="initial_fee"
+                type="number"
+                min="0"
+                step="1"
+                inputMode="decimal"
+                value={(form.initial_fee_cents ?? 0) / 100}
+                onChange={(e) => set('initial_fee_cents', Math.round(Number(e.target.value) * 100))}
+              />
+            </label>
+            <label className="check" style={{ alignSelf: 'end' }}>
+              <input id="initial_fee_paid" type="checkbox" checked={form.initial_fee_paid === true} onChange={(e) => set('initial_fee_paid', e.target.checked)} />
+              <span>Cleanup fee paid</span>
+            </label>
+          </div>
+          {cleanupPending(form) && (
+            <div className="alert warn">
+              First bill: {money(form.price_cents)} plan + {money(form.initial_fee_cents ?? 0)} cleanup ={' '}
+              {money(form.price_cents + (form.initial_fee_cents ?? 0))}
+            </div>
+          )}
           <button type="button" className="btn" onClick={markPaid}>
             Mark paid for this month
           </button>

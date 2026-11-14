@@ -9,6 +9,7 @@ It's safe to run more than once. Until then the site still works; the new on/off
 Still to run:
 
 - [ ] `0003_texts.sql`: text message on/off settings (reminder and "service done")
+- [ ] `0004_initial_cleanup.sql`: initial cleanup fee (sign-up question, first-bill fee)
 
 Already run: `0001_init.sql`, `0002_customers.sql`.
 

@@ -58,6 +58,9 @@ export default function Clients() {
               <span className="muted">
                 {s.phone} · {s.email}
               </span>
+              {(s.initial_fee_cents ?? 0) > 0 && (
+                <span className="pill payment_issue">Initial cleanup: +${(s.initial_fee_cents ?? 0) / 100} · make it the last stop</span>
+              )}
               {s.notes && <span className="muted">“{s.notes}”</span>}
               <div className="row">
                 <button className="btn small primary" onClick={() => navigate('/app/clients/new', { state: { signup: s } })}>

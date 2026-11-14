@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import PublicLayout from '../components/PublicLayout'
-import { BUSINESS, PLANS as PLAN_INFO } from '../lib/business'
+import { BUSINESS, CLEANUP_FEES, cleanupFeeCents, PLANS as PLAN_INFO, type LastCleaned } from '../lib/business'
 import { supabase } from '../lib/supabase'
 import { authErrorText, returnUrl } from '../lib/links'
 
@@ -14,7 +14,7 @@ const PLANS = PLAN_INFO.map((p) => ({
 export default function Signup() {
   const [params] = useSearchParams()
   const startPlan = PLANS.some((p) => p.value === params.get('plan')) ? params.get('plan')! : 'weekly'
-  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', dog_count: 1, plan: startPlan, notes: '' })
+  const [form, setForm] = useState({ name: '', phone: '', email: '', address: '', dog_count: 1, plan: startPlan, notes: '', last_cleaned: '' as LastCleaned | '' })
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [busy, setBusy] = useState(false)
@@ -23,6 +23,9 @@ export default function Signup() {
   const [error, setError] = useState('')
 
   const set = (k: keyof typeof form, v: string | number) => setForm((f) => ({ ...f, [k]: v }))
+
+  const subscription = form.plan !== 'one_time'
+  const fee = subscription ? cleanupFeeCents(form.last_cleaned, form.dog_count) : 0
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -49,12 +52,15 @@ export default function Signup() {
     }
 
     // 2. Send their details to the team (shows up under New sign-ups).
-    const { error } = await supabase.from('signups').insert({
-      ...form,
-      name: form.name.trim(),
-      email,
-      address: form.address.trim(),
-    })
+    const details = { ...form, name: form.name.trim(), email, address: form.address.trim(), initial_fee_cents: fee }
+    let { error } = await supabase.from('signups').insert(details)
+    if (error && /last_cleaned|initial_fee_cents/.test(error.message)) {
+      // Database update 0004 not run yet: put the answer in the notes instead.
+      const { last_cleaned, initial_fee_cents, ...rest } = details
+      const label = CLEANUP_FEES.find((f) => f.value === last_cleaned)?.label ?? 'not answered'
+      const notes = `${rest.notes}\n[Yard last cleaned: ${label}. Cleanup fee: $${initial_fee_cents / 100}]`.trim()
+      ;({ error } = await supabase.from('signups').insert({ ...rest, notes }))
+    }
     setBusy(false)
     if (error) return setError('Your login was made, but we couldn’t send your details. Try again, or text us.')
     setDone(data.session ? 'ready' : 'check-email')
@@ -105,6 +111,30 @@ export default function Signup() {
                 ))}
               </select>
             </label>
+            {subscription && (
+              <>
+                <label className="field">
+                  When was your yard last cleaned?
+                  <select id="last_cleaned" value={form.last_cleaned} onChange={(e) => set('last_cleaned', e.target.value)} required>
+                    <option value="" disabled>
+                      Pick one
+                    </option>
+                    {CLEANUP_FEES.map((f) => (
+                      <option key={f.value} value={f.value}>
+                        {f.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {form.last_cleaned && (
+                  <div className={`alert ${fee ? 'warn' : 'ok'}`}>
+                    {fee
+                      ? `One-time cleanup fee: +$${fee / 100} on your first bill only. If the yard needs a lot more than that, we’ll text you a photo and price before we start.`
+                      : 'No cleanup fee. Your first bill is just your plan.'}
+                  </div>
+                )}
+              </>
+            )}
           </section>
 
           <section className="card">

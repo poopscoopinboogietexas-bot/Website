@@ -23,6 +23,27 @@ export const TEXTS = {
   done: 'Hi {first}! Your yard is all scooped and the gate is latched. Photos are in your email. Thanks! – Poop Scoopin’ Boogie',
 }
 
+/**
+ * One-time initial cleanup fee, by how long since the yard was last cleaned.
+ * Flat for 1–2 dogs; each dog after 2 adds EXTRA_DOG_CENTS (only when there is a fee).
+ * Edit amounts here; the sign-up page, FAQ and staff app all read from this.
+ */
+export const CLEANUP_FEES = [
+  { value: 'under_1_week', label: 'Within the last week', cents: 0 },
+  { value: '1_2_weeks', label: '1–2 weeks ago', cents: 1500 },
+  { value: '2_4_weeks', label: '2–4 weeks ago', cents: 3000 },
+  { value: 'over_month', label: 'Over a month ago (or never)', cents: 5000 },
+] as const
+export const CLEANUP_EXTRA_DOG_CENTS = 1000
+
+export type LastCleaned = (typeof CLEANUP_FEES)[number]['value']
+
+export function cleanupFeeCents(lastCleaned: LastCleaned | '' | null | undefined, dogCount: number): number {
+  const base = CLEANUP_FEES.find((f) => f.value === lastCleaned)?.cents ?? 0
+  if (base === 0) return 0
+  return base + Math.max(0, dogCount - 2) * CLEANUP_EXTRA_DOG_CENTS
+}
+
 export const PLANS = [
   {
     value: 'weekly',
@@ -69,7 +90,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How much does it cost?',
-    a: 'Weekly service is $60 a month for 1 dog, and every other week is $40 a month. Each extra dog adds $10 a month. If your yard hasn’t been cleaned in a while, the first visit may cost more. We’ll always tell you the price before we start.',
+    a: 'Weekly service is $60 a month for 1 dog, and every other week is $40 a month. Each extra dog adds $10 a month. If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: $15 if it’s been 1–2 weeks, $30 for 2–4 weeks, and $50 for over a month (plus $10 for each dog after 2). If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
   },
   {
     q: 'Is there a contract?',

@@ -6,7 +6,8 @@ import { localDate, mapsDirectionsUrl } from '../lib/schedule'
 import { ARRIVAL_CHECKLIST, FINISH_CHECKLIST } from '../lib/sop'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { TEMPERAMENT_LABEL, type Client, type Visit } from '../lib/types'
-import { copyText, doneText, phoneDigits, smsLink, wantsDoneText } from '../lib/texts'
+import { cleanupPending, copyText, doneText, phoneDigits, smsLink, wantsDoneText } from '../lib/texts'
+import CleanupPrice from '../components/CleanupPrice'
 
 type PhotoKind = 'yard' | 'gate'
 
@@ -126,6 +127,10 @@ export default function Job() {
         </Link>
         {client.status === 'payment_issue' && <span className="pill payment_issue">Payment issue</span>}
       </div>
+
+      {cleanupPending(client) && visit?.status !== 'complete' && (
+        <CleanupPrice client={client} onSaved={(cents) => setClient({ ...client, initial_fee_cents: cents })} />
+      )}
 
       <section className="card">
         <h1>{client.name}</h1>

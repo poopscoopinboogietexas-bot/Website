@@ -21,3 +21,14 @@ describe('texts', () => {
     expect(smsLink('(903) 555-0142', 'Hi & bye')).toBe('sms:+19035550142?&body=Hi%20%26%20bye')
   })
 })
+
+import { cleanupFeeCents } from './business'
+describe('cleanup fee', () => {
+  it('follows the tiers, flat for 1–2 dogs', () => {
+    expect(cleanupFeeCents('under_1_week', 4)).toBe(0)
+    expect(cleanupFeeCents('1_2_weeks', 1)).toBe(1500)
+    expect(cleanupFeeCents('2_4_weeks', 2)).toBe(3000)
+    expect(cleanupFeeCents('over_month', 4)).toBe(7000)
+    expect(cleanupFeeCents('', 3)).toBe(0)
+  })
+})

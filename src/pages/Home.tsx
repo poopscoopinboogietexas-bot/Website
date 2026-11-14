@@ -74,7 +74,7 @@ export default function Home() {
                 </article>
               ))}
             </div>
-            <p className="muted center-text">No contracts. Cancel anytime. Long-neglected yards may need a one-time catch-up fee, quoted before we start.</p>
+            <p className="muted center-text">No contracts. Cancel anytime. Yard not cleaned lately? A one-time cleanup fee is added to your first bill: $15 (1–2 weeks), $30 (2–4 weeks) or $50 (over a month).</p>
           </div>
         </section>
 

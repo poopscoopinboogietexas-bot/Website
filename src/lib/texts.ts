@@ -41,3 +41,13 @@ export async function copyText(text: string): Promise<boolean> {
     return false
   }
 }
+
+/** First visit still owes the one-time cleanup fee. */
+export const cleanupPending = (c: Pick<Client, 'initial_fee_cents' | 'initial_fee_paid'>) =>
+  (c.initial_fee_cents ?? 0) > 0 && c.initial_fee_paid !== true
+
+export function cleanupPriceText(client: Pick<Client, 'name'>, oldCents: number, newCents: number): string {
+  const first = client.name.trim().replace(/^the\s+/i, '').split(/\s+/)[0] || 'there'
+  const dollars = (c: number) => `$${Math.round(c / 100)}`
+  return `Hi ${first}! It's Poop Scoopin' Boogie at your yard. It needs more cleanup than we expected, so the one-time cleanup fee would be ${dollars(newCents)} instead of ${dollars(oldCents)}. Photo attached. Reply YES to approve and we'll get started!`
+}
