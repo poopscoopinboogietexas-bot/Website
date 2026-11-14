@@ -6,6 +6,7 @@ The route app for Poop Scoopin' Boogie, a pet waste removal business in Tyler, T
 - **Today:** the yards due today in route order, a "Next house" button that opens Google Maps, and a call list of paused clients.
 - **Job:** address, gate code, dogs, and instructions, an SOP checklist, and required yard and latched-gate photos. Completing the job emails the customer both photos.
 - **Clients:** contact info, yard access, dogs, plan, payment status, notes, and visit history.
+- **Texts:** "Text tomorrow's customers" walks through the next day's route with each reminder filled in, and finishing a job offers a "service done" text. Customers can turn either off on their account page. Wording lives in `src/lib/business.ts`.
 - **SOPs:** safety and cleaning steps.
 - **Customer page:** customers log in with email and password to see visit photos, their plan and dogs, update gate details, and pay through Stripe.
 - **Sign-up form** (`#/signup`): new customers make a login and send their info, which shows up in the Clients tab.

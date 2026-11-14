@@ -130,15 +130,22 @@ export default function ClientEdit() {
     e.preventDefault()
     setSaving(true)
     setError('')
-    const body = {
+    const body: Partial<ClientDraft> = {
       ...form,
       biweekly_anchor: form.plan === 'biweekly' ? form.biweekly_anchor || localDate() : null,
     }
+    // Text settings only exist once migration 0003 has run; leave them out until they're set.
+    if (body.reminder_texts === undefined) delete body.reminder_texts
+    if (body.done_texts === undefined) delete body.done_texts
     const res = isNew
       ? await supabase.from('clients').insert(body).select('id').single()
       : await supabase.from('clients').update(body).eq('id', clientId!).select('id').single()
     if (res.error) {
-      setError('Could not save. Check that name, address and day are filled in.')
+      setError(
+        /reminder_texts|done_texts/.test(res.error.message)
+          ? 'Could not save the text settings: the database needs one more setup step (0003_texts.sql).'
+          : 'Could not save. Check that name, address and day are filled in.',
+      )
       setSaving(false)
       return
     }
@@ -205,6 +212,14 @@ export default function ClientEdit() {
           <label className="field">
             Address
             <input id="address" value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="123 Oak St, Tyler, TX 75701" required />
+          </label>
+          <label className="check">
+            <input id="reminder_texts" type="checkbox" checked={form.reminder_texts !== false} onChange={(e) => set('reminder_texts', e.target.checked)} />
+            <span>Reminder text the day before</span>
+          </label>
+          <label className="check">
+            <input id="done_texts" type="checkbox" checked={form.done_texts !== false} onChange={(e) => set('done_texts', e.target.checked)} />
+            <span>“Service done” text after each visit</span>
           </label>
         </section>
 

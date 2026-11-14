@@ -308,3 +308,4 @@ textarea { min-height: 72px; resize: vertical; }
 }
 .site-footer img { width: 90px; border-radius: 12px; }
 .site-footer nav { gap: 16px; justify-content: center; }
+.text-preview { background: var(--cream, #fff8ee); border: 2px dashed var(--line, #d8c8b8); border-radius: var(--radius); padding: 12px 14px; white-space: pre-wrap; }

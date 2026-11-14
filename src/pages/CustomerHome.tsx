@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { BUSINESS } from '../lib/business'
 import { money } from '../lib/schedule'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { DAYS, TEMPERAMENT_LABEL, type Client, type Visit } from '../lib/types'
@@ -17,6 +18,7 @@ export default function CustomerHome() {
   const [visits, setVisits] = useState<VisitWithPhotos[]>([])
   const [details, setDetails] = useState({ phone: '', gate_code: '', access_notes: '', instructions: '' })
   const [saved, setSaved] = useState('')
+  const [textsSaved, setTextsSaved] = useState('')
   const [billing, setBilling] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -57,6 +59,19 @@ export default function CustomerHome() {
       p_instructions: details.instructions,
     })
     setSaved(error ? 'Could not save. Try again in a minute.' : 'Saved. We’ll use this on your next visit.')
+  }
+
+  async function saveTexts(change: Pick<Client, 'reminder_texts'> | Pick<Client, 'done_texts'>) {
+    if (!client) return
+    const next = { ...client, ...change }
+    setClient(next)
+    setTextsSaved('')
+    const { error } = await supabase.rpc('update_my_texts', {
+      p_reminder_texts: next.reminder_texts !== false,
+      p_done_texts: next.done_texts !== false,
+    })
+    if (error) setClient(client)
+    setTextsSaved(error ? 'Could not save. Try again in a minute.' : 'Saved.')
   }
 
   async function openBilling() {
@@ -170,6 +185,20 @@ export default function CustomerHome() {
         <button className="btn">Save</button>
         {saved && <div className={`alert ${saved.startsWith('Saved') ? 'ok' : 'bad'}`}>{saved}</div>}
       </form>
+
+      <section className="card">
+        <h2>Text messages</h2>
+        <div className="muted">We text from {BUSINESS.phone}. Turn off anything you don’t want. Your photo emails keep coming either way.</div>
+        <label className="check">
+          <input id="c-reminder-texts" type="checkbox" checked={client.reminder_texts !== false} onChange={(e) => saveTexts({ reminder_texts: e.target.checked })} />
+          <span>Reminder the day before your visit</span>
+        </label>
+        <label className="check">
+          <input id="c-done-texts" type="checkbox" checked={client.done_texts !== false} onChange={(e) => saveTexts({ done_texts: e.target.checked })} />
+          <span>“Service done” text after each visit</span>
+        </label>
+        {textsSaved && <div className={`alert ${textsSaved.startsWith('Saved') ? 'ok' : 'bad'}`}>{textsSaved}</div>}
+      </section>
     </main>
   )
 }

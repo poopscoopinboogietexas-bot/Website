@@ -13,6 +13,12 @@ function dayNumber(iso: string): number {
   return Math.round(Date.UTC(y, m - 1, d) / 86_400_000)
 }
 
+/** The date after the given one, as YYYY-MM-DD. */
+export function nextDate(iso: string): string {
+  const [y, m, d] = iso.split('-').map(Number)
+  return localDate(new Date(y, m - 1, d + 1))
+}
+
 export function weekdayOf(iso: string): number {
   const [y, m, d] = iso.split('-').map(Number)
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay()

@@ -13,6 +13,16 @@ export const BUSINESS = {
 /** tel: / sms: link for the business phone, e.g. tel:+19033472494 */
 export const phoneLink = (kind: 'tel' | 'sms' = 'tel') => `${kind}:+1${BUSINESS.phone.replace(/\D/g, '').slice(-10)}`
 
+/**
+ * Text messages the staff app prefills. Edit the wording here.
+ * {first} = customer's first name, {day} = weekday name.
+ */
+export const TEXTS = {
+  reminder: 'Hi {first}! Poop Scoopin’ Boogie is coming tomorrow ({day}) to scoop your yard. Please leave the gate unlocked, keep shy pups inside, and make sure we can reach your trash bin. Thanks!',
+  reminderTakeAway: 'Hi {first}! Poop Scoopin’ Boogie is coming tomorrow ({day}) to scoop your yard. Please leave the gate unlocked and keep shy pups inside. Thanks!',
+  done: 'Hi {first}! Your yard is all scooped and the gate is latched. Photos are in your email. Thanks! – Poop Scoopin’ Boogie',
+}
+
 export const PLANS = [
   {
     value: 'weekly',

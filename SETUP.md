@@ -5,7 +5,7 @@ About 30 minutes, one time. Everything here is free.
 ## 1. Make the database (Supabase)
 
 1. Go to [supabase.com](https://supabase.com), sign up with GitHub, and click **New project**. Name it `poop-scoopin-boogie`, pick a strong database password (save it somewhere), region **Central US**.
-2. When it's ready, open **SQL Editor**, click **New query**, paste everything from [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), and click **Run**. You should see "Success". Then do the same with [`supabase/migrations/0002_customers.sql`](supabase/migrations/0002_customers.sql).
+2. When it's ready, open **SQL Editor**, click **New query**, paste everything from [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql), and click **Run**. You should see "Success". Then do the same with [`supabase/migrations/0002_customers.sql`](supabase/migrations/0002_customers.sql) and [`supabase/migrations/0003_texts.sql`](supabase/migrations/0003_texts.sql).
 3. Go to **Authentication → Sign In / Providers** and leave "Allow new users to sign up" **on**, and under **Email** leave **Confirm email** on. Customers make their own email + password login on the sign-up page. It's safe: a new login only sees the client record with the same email, and only people in the staff list see the route app.
 4. Go to **Authentication → Users → Add user → Create new user**. Add yourself and your mom with email and password. Tick "Auto confirm user".
 5. Back in **SQL Editor**, run this once, with your real emails and names:

@@ -80,6 +80,10 @@ export default function Today() {
         route.length > 0 && <div className="alert ok">All done for today. Great scoopin’! Spray and rinse your tools.</div>
       )}
 
+      <Link to="/app/texts" className="btn">
+        💬 Text tomorrow’s customers
+      </Link>
+
       {!loading && route.length === 0 && !error && (
         <div className="card flat">
           <h2>No yards today</h2>

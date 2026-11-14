@@ -28,6 +28,10 @@ export interface Client {
   payment_issue_since: string | null
   paid_through: string | null
   route_order: number
+  /** Text the day before. Missing until migration 0003 runs; treat missing as on. */
+  reminder_texts?: boolean
+  /** Text "service done" after each visit. Missing until migration 0003 runs; treat missing as on. */
+  done_texts?: boolean
   dogs?: Dog[]
 }
 

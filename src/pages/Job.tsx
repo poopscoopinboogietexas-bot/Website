@@ -6,6 +6,7 @@ import { localDate, mapsDirectionsUrl } from '../lib/schedule'
 import { ARRIVAL_CHECKLIST, FINISH_CHECKLIST } from '../lib/sop'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { TEMPERAMENT_LABEL, type Client, type Visit } from '../lib/types'
+import { copyText, doneText, phoneDigits, smsLink, wantsDoneText } from '../lib/texts'
 
 type PhotoKind = 'yard' | 'gate'
 
@@ -250,9 +251,26 @@ export default function Job() {
           <div className={`alert ${result.startsWith('Job marked') ? 'warn' : 'ok'}`}>
             {result || (visit?.emailed_at ? 'Done and emailed.' : 'Done.')}
           </div>
-          <Link to="/app" className="btn primary big">
-            Back to route
-          </Link>
+          {client.phone && wantsDoneText(client) && phoneDigits(client.phone) ? (
+            <>
+              <a className="btn primary big" href={smsLink(client.phone, doneText(client))}>
+                💬 Text {client.name.split(' ')[0]}: service done
+              </a>
+              <button type="button" className="btn small" onClick={() => copyText(doneText(client))}>
+                Copy message
+              </button>
+              <Link to="/app" className="btn big">
+                Back to route
+              </Link>
+            </>
+          ) : (
+            <>
+              {!wantsDoneText(client) && <div className="muted">{client.name} turned off “service done” texts.</div>}
+              <Link to="/app" className="btn primary big">
+                Back to route
+              </Link>
+            </>
+          )}
         </>
       )}
     </main>

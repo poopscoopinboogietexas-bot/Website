@@ -9,6 +9,7 @@ type Row = Record<string, any>
 const today = localDate()
 const wd = weekdayOf(today)
 const otherDay = (wd + 3) % 7
+const tomorrowDay = (wd + 1) % 7
 const daysAgo = (n: number) => {
   const d = new Date()
   d.setDate(d.getDate() - n)
@@ -45,10 +46,13 @@ const c2 = client({ name: 'Marcus Lee', address: '3207 Shiloh Rd, Tyler, TX 7570
 const c3 = client({ name: 'The Ramirez Family', address: '1820 Copeland Rd, Tyler, TX 75701', gate_code: '4400', route_order: 20, status: 'payment_issue', payment_issue_since: daysAgo(3), price_cents: 10000 })
 const c4 = client({ name: 'Linda Park', address: '905 S Broadway Ave, Tyler, TX 75701', access_notes: 'Back gate by the garage', route_order: 30, plan: 'biweekly', biweekly_anchor: today, price_cents: 6000 })
 const c5 = client({ name: 'Tom Becker', address: '2214 Old Bullard Rd, Tyler, TX 75701', status: 'paused', payment_issue_since: daysAgo(9), phone: '(903) 555-0177' })
+const c7 = client({ name: 'Sam Ortiz', address: '3410 Troup Hwy, Tyler, TX 75701', service_day: tomorrowDay, phone: '(903) 555-0123', route_order: 10 })
+const c8 = client({ name: 'Kelly Brandt', address: '1200 E Grande Blvd, Tyler, TX 75703', service_day: tomorrowDay, phone: '(903) 555-0166', bag_disposal: 'take_away', route_order: 20 })
+const c9 = client({ name: 'Bev Holt', address: '505 W Rusk St, Tyler, TX 75701', service_day: tomorrowDay, phone: '(903) 555-0111', reminder_texts: false, route_order: 30 })
 const c6 = client({ name: 'Grace Okafor', address: '6610 Old Jacksonville Hwy, Tyler, TX 75703', service_day: otherDay, price_cents: 8500 })
 
 const db: Record<string, Row[]> = {
-  clients: [c1, c2, c3, c4, c5, c6],
+  clients: [c1, c2, c3, c4, c5, c6, c7, c8, c9],
   dogs: [
     { id: uid(), client_id: c1.id, name: 'Waffles', breed: 'Basset hound', temperament: 'friendly', notes: 'Will follow you around' },
     { id: uid(), client_id: c1.id, name: 'Pickles', breed: 'Beagle', temperament: 'jumpy', notes: '' },

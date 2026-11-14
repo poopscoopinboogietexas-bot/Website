@@ -12,6 +12,7 @@ import Job from './pages/Job'
 import Clients from './pages/Clients'
 import ClientEdit from './pages/ClientEdit'
 import Sops from './pages/Sops'
+import Texts from './pages/Texts'
 
 export default function App() {
   if (!isConfigured) {
@@ -73,6 +74,7 @@ function StaffApp() {
         <Route path="clients/new" element={<ClientEdit />} />
         <Route path="clients/:clientId" element={<ClientEdit />} />
         <Route path="sops" element={<Sops />} />
+        <Route path="texts" element={<Texts />} />
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
       <nav className="tabs" aria-label="Main">
