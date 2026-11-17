@@ -1,7 +1,7 @@
 -- DATABASE UPDATES TO RUN
 -- Everything here is safe to run more than once. Paste this whole file into
 -- Supabase > SQL Editor and click Run, once, when you're done setting up.
--- Included (in order): 0003_texts.sql, 0004_initial_cleanup.sql, 0005_bag_backup.sql, 0006_blocked_days.sql
+-- Included (in order): 0003_texts.sql, 0004_initial_cleanup.sql, 0005_bag_backup.sql, 0006_blocked_days.sql, 0007_signup_self_read.sql
 
 -- Text message preferences per client (reminder the day before, "service done" after).
 -- Paste into Supabase > SQL Editor and click Run. Safe to run more than once.
@@ -51,3 +51,11 @@ alter table public.clients add column if not exists bag_backup text not null def
 -- The business picks the service day by area and avoids these. Safe to run more than once.
 alter table public.signups add column if not exists blocked_days smallint[] not null default '{}';
 alter table public.clients add column if not exists blocked_days smallint[] not null default '{}';
+
+
+-- ===== 0007_signup_self_read.sql =====
+-- Let a logged-in customer see their own sign-up (matched by email), so their account page
+-- shows their plan and details before they're on the schedule. Safe to run more than once.
+drop policy if exists signups_own_read on public.signups;
+create policy signups_own_read on public.signups for select to authenticated
+  using (lower(email) = lower(coalesce(auth.jwt() ->> 'email', '')));

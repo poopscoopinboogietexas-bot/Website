@@ -133,7 +133,7 @@ export default function Home() {
         <section className="band cta">
           <div className="band-inner center-text">
             <h2 className="section-title">Ready to get your yard back?</h2>
-            <p>Sign up in two minutes. We’ll text you to set up your first visit.</p>
+            <p>Sign up in two minutes. We’ll pick your day and text you before your first visit.</p>
             <Link to="/signup" className="btn primary big-inline">
               Sign up for scoopin’
             </Link>

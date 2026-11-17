@@ -86,7 +86,7 @@ export default function Signup() {
               you don’t see it.
             </div>
           ) : null}
-          <div>We got your info and will reach out within a day to set up your first visit.</div>
+          <div>We got your info. We’ll pick your service day based on your area and text you within a day. Your account page shows your sign-up and what happens next.</div>
           <Link to={done === 'ready' ? '/account' : '/login'} className="btn">
             {done === 'ready' ? 'Go to my account' : 'Log in'}
           </Link>

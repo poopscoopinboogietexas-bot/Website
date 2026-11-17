@@ -1,5 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { BUSINESS } from '../lib/business'
+import PendingAccount from '../components/PendingAccount'
+import { useAuth } from '../lib/auth'
 import { money } from '../lib/schedule'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import { DAYS, TEMPERAMENT_LABEL, type Client, type Visit } from '../lib/types'
@@ -14,6 +16,7 @@ const STATUS_TEXT: Record<Client['status'], string> = {
 }
 
 export default function CustomerHome() {
+  const { session } = useAuth()
   const [client, setClient] = useState<Client | null | undefined>(undefined)
   const [visits, setVisits] = useState<VisitWithPhotos[]>([])
   const [details, setDetails] = useState({ phone: '', gate_code: '', access_notes: '', instructions: '' })
@@ -104,10 +107,7 @@ export default function CustomerHome() {
     return (
       <main className="page">
         {header}
-        <div className="card">
-          <h2>You’re signed up!</h2>
-          <div>We got your info and will reach out within a day to set up your first visit. Once you’re on the schedule, your plan, visit photos and payment options show up here.</div>
-        </div>
+        <PendingAccount email={session?.user.email ?? ''} />
       </main>
     )
   }
