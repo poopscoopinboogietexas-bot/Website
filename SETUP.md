@@ -15,6 +15,7 @@ Still to run:
 - [ ] `0007_signup_self_read.sql`: new customers can see their own sign-up on their account page
 - [ ] `0008_auto_day.sql`: books the service day automatically at sign-up (Monday and Wednesday first, 16 yards a day)
 - [ ] `0009_area_billing_cancel.sql`: north Tyler on Monday / south on Wednesday, autopay (Stripe), the Cancel button, and the 7-day pause
+- [ ] `0010_my_dogs.sql`: customers add and remove their own dogs (you get a note on their client page)
 
 Already run: `0001_init.sql`, `0002_customers.sql`.
 

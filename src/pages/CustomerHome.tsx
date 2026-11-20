@@ -3,11 +3,12 @@ import { BUSINESS } from '../lib/business'
 import PendingAccount from '../components/PendingAccount'
 import CancelService from '../components/CancelService'
 import ChangePlan from '../components/ChangePlan'
+import MyDogs from '../components/MyDogs'
 import { dogsFromPrice, openBilling } from '../lib/billing'
 import { useAuth } from '../lib/auth'
 import { money } from '../lib/schedule'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
-import { DAYS, TEMPERAMENT_LABEL, type Client, type Visit } from '../lib/types'
+import { DAYS, type Client, type Visit } from '../lib/types'
 
 type VisitWithPhotos = Visit & { yardUrl?: string; gateUrl?: string }
 
@@ -163,18 +164,7 @@ export default function CustomerHome() {
         ))}
       </section>
 
-      <section className="card">
-        <h2>Your dogs</h2>
-        {(client.dogs ?? []).length === 0 && <div className="muted">Text us your dogs’ names so we can say hi.</div>}
-        {(client.dogs ?? []).map((d) => (
-          <div key={d.id} className="row between">
-            <span>
-              <strong>{d.name}</strong> {d.breed && <span className="muted">· {d.breed}</span>}
-            </span>
-            <span className="pill dog">{TEMPERAMENT_LABEL[d.temperament]}</span>
-          </div>
-        ))}
-      </section>
+      <MyDogs client={client} onChange={setClient} />
 
       <form className="card" onSubmit={saveDetails}>
         <h2>Yard access</h2>

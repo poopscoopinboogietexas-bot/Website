@@ -41,7 +41,7 @@ function client(over: Row): Row {
   }
 }
 
-const c1 = client({ name: 'Dana Whitfield', address: '4512 Hollytree Dr, Tyler, TX 75703', gate_code: '1987', access_notes: 'Left side gate, latch sticks', route_order: 10, phone: '(903) 555-0142' })
+const c1 = client({ price_cents: 6000, name: 'Dana Whitfield', address: '4512 Hollytree Dr, Tyler, TX 75703', gate_code: '1987', access_notes: 'Left side gate, latch sticks', route_order: 10, phone: '(903) 555-0142' })
 const c2 = client({ blocked_days: [], initial_fee_cents: 3000, initial_fee_paid: false, name: 'Marcus Lee', address: '3207 Shiloh Rd, Tyler, TX 75703', instructions: 'Biscuit had diarrhea Monday. Scoop this yard last and spray boots.', route_order: 40, bag_backup: 'Beside the garage' })
 const c3 = client({ name: 'The Ramirez Family', address: '1820 Copeland Rd, Tyler, TX 75701', gate_code: '4400', route_order: 20, status: 'payment_issue', payment_issue_since: daysAgo(3), price_cents: 10000 })
 const c4 = client({ name: 'Linda Park', address: '905 S Broadway Ave, Tyler, TX 75701', access_notes: 'Back gate by the garage', route_order: 30, plan: 'biweekly', biweekly_anchor: today, price_cents: 6000 })
@@ -183,6 +183,8 @@ window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
   // Open the demo with #/account after running localStorage.demoCustomer = '1' to see a customer's page.
   if (url.pathname === '/rest/v1/rpc/is_staff') return reply(!localStorage.getItem('demoCustomer'))
   if (url.pathname === '/rest/v1/rpc/signup_day') return reply(3)
+  if (url.pathname === '/rest/v1/rpc/add_my_dog') return reply(uid())
+  if (url.pathname === '/rest/v1/rpc/remove_my_dog') return reply(null, 204)
   // Payments: plan changes "work"; Stripe pages aren't part of the demo.
   if (url.pathname === '/functions/v1/billing') {
     const body = JSON.parse(String(init.body ?? '{}'))
