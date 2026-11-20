@@ -17,7 +17,10 @@ export default function Today() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([fetchClients(), fetchVisitsOn(today)])
+    // Payment problems older than 7 days pause service (they show on the Call list). Needs migration 0009.
+    Promise.resolve(supabase.rpc('pause_overdue'))
+      .catch(() => null)
+      .then(() => Promise.all([fetchClients(), fetchVisitsOn(today)]))
       .then(([c, v]) => {
         setClients(c)
         setVisits(v)

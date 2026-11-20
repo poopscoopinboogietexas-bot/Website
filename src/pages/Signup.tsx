@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import PublicLayout from '../components/PublicLayout'
-import { BUSINESS, CLEANUP_FEES, cleanupFeeCents, DOGS_INCLUDED, EXTRA_DOG_CENTS, monthlyPriceCents, PLAN_BASE_CENTS, PLANS as PLAN_INFO, WORK_DAY, type LastCleaned } from '../lib/business'
+import { BUSINESS, CLEANUP_FEES, cleanupFeeCents, DOGS_INCLUDED, EXTRA_DOG_CENTS, monthlyPriceCents, PLAN_BASE_CENTS, PLANS as PLAN_INFO, SERVICE_AREA, WORK_DAY, type LastCleaned } from '../lib/business'
+import { geocodeAll, miles } from '../lib/route'
 import { money } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
 import { authErrorText, returnUrl } from '../lib/links'
@@ -34,6 +35,22 @@ export default function Signup() {
   const extraDogs = Math.max(0, form.dog_count - DOGS_INCLUDED)
   const monthly = monthlyPriceCents(plan, form.dog_count)
   const [bookedDay, setBookedDay] = useState<number | null>(null)
+  const [payBusy, setPayBusy] = useState(false)
+  const [payMsg, setPayMsg] = useState('')
+
+  async function startAutopay() {
+    setPayBusy(true)
+    setPayMsg('')
+    const { data, error } = await supabase.functions.invoke('billing', {
+      body: { action: 'checkout', signup_id: signupId, return_url: window.location.href },
+    })
+    if (!error && data?.url) {
+      window.location.href = data.url
+      return
+    }
+    setPayBusy(false)
+    setPayMsg('Online payments aren’t switched on yet. We’ll text you a payment link before your first visit.')
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -42,6 +59,20 @@ export default function Signup() {
     if (password !== confirm) return setError('The two passwords don’t match.')
     setBusy(true)
     const email = form.email.trim()
+
+    // 0. Check the address is in our area (and whether it's north or south Tyler, for booking).
+    // If the map can't find it, let it through; we check new sign-ups by hand anyway.
+    const address = form.address.trim()
+    const point = (await geocodeAll([address])).get(address) ?? null
+    if (point) {
+      const away = miles(SERVICE_AREA.center, point)
+      if (away > SERVICE_AREA.miles) {
+        setBusy(false)
+        return setError(
+          `That address looks like it’s about ${Math.round(away)} miles from Tyler, outside the area we serve right now. Check the address (add the city), or call or text us at ${BUSINESS.phone} and we’ll see what we can do.`,
+        )
+      }
+    }
 
     // 1. Make their login.
     const { data, error: authError } = await supabase.auth.signUp({
@@ -60,11 +91,12 @@ export default function Signup() {
     }
 
     // 2. Send their details to the team (shows up under New sign-ups).
-    const details = { ...(signupId ? { id: signupId } : {}), ...form, name: form.name.trim(), email, address: form.address.trim(), initial_fee_cents: fee }
+    const details = { ...(signupId ? { id: signupId } : {}), ...form, name: form.name.trim(), email, address, initial_fee_cents: fee, ...(point ? { lat: point.lat, lng: point.lng } : {}) }
     let { error } = await supabase.from('signups').insert(details)
-    if (error && /last_cleaned|initial_fee_cents|bag_backup|blocked_days/.test(error.message)) {
+    if (error && /last_cleaned|initial_fee_cents|bag_backup|blocked_days|lat|lng/.test(error.message)) {
       // Database updates not run yet: put the newer answers in the notes instead.
-      const { last_cleaned, initial_fee_cents, bag_backup, blocked_days, ...rest } = details
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { last_cleaned, initial_fee_cents, bag_backup, blocked_days, lat, lng, ...rest } = details
       const noGo = blocked_days.length ? blocked_days.map((d) => DAYS[d]).join(', ') : 'none'
       const label = CLEANUP_FEES.find((f) => f.value === last_cleaned)?.label ?? 'not answered'
       const notes = `${rest.notes}\n[Yard last cleaned: ${label}. Cleanup fee: $${initial_fee_cents / 100}. If bin unreachable, leave bags: ${bag_backup || 'not answered'}. Days that don’t work: ${noGo}]`.trim()
@@ -110,6 +142,19 @@ export default function Signup() {
                 ? 'We got your info and will text you within a day to set up your cleanup.'
                 : 'We got your info and will text you your service day within a day. Your account page shows your sign-up and what happens next.'}
           </div>
+          {subscription && signupId && (
+            <div className="card flat stack" style={{ gap: 8 }}>
+              <strong>Last step: set up autopay</strong>
+              <div className="muted">
+                {fee ? `Your first payment is ${money(monthly + fee)} today (your plan plus the one-time cleanup), then ` : 'Your first payment is today, then '}
+                {money(monthly)} on this same day each month. Cancel anytime from your account page.
+              </div>
+              <button type="button" className="btn primary" onClick={startAutopay} disabled={payBusy}>
+                {payBusy ? 'Opening…' : 'Set up autopay'}
+              </button>
+              {payMsg && <div className="alert warn">{payMsg}</div>}
+            </div>
+          )}
           <Link to={done === 'ready' ? '/account' : '/login'} className="btn">
             {done === 'ready' ? 'Go to my account' : 'Log in'}
           </Link>
@@ -186,6 +231,9 @@ export default function Signup() {
                 <input id="su-email" type="email" autoComplete="email" value={form.email} onChange={(e) => set('email', e.target.value)} required />
               </label>
             </div>
+            <div className="muted">
+              We text you from {BUSINESS.phone} the night before each visit and when we’re done. You can turn texts off anytime on your account page.
+            </div>
             <label className="field">
               Address
               <input
@@ -238,8 +286,11 @@ export default function Signup() {
 
           {error && <div className="alert bad">{error}</div>}
           <button className="btn primary big" disabled={busy}>
-            {busy ? 'Sending…' : 'Sign me up'}
+            {busy ? 'Checking your address…' : 'Sign me up'}
           </button>
+          <div className="muted" style={{ textAlign: 'center' }}>
+            By signing up, you agree to our <Link to="/policies">policies</Link>.
+          </div>
           <div className="muted" style={{ textAlign: 'center' }}>
             Already a customer? <Link to="/login">Log in</Link>
           </div>

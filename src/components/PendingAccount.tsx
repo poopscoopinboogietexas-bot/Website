@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import CancelService from './CancelService'
+import { niceDate, openBilling } from '../lib/billing'
 import { BUSINESS, CLEANUP_FEES, monthlyPriceCents, phoneLink, PLANS } from '../lib/business'
 import { money } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
@@ -7,6 +9,9 @@ import { DAYS, type Signup } from '../lib/types'
 /** Account page for someone who signed up but isn't on the schedule yet. */
 export default function PendingAccount({ email }: { email: string }) {
   const [signup, setSignup] = useState<Signup | null | undefined>(undefined)
+  const [busy, setBusy] = useState(false)
+  const [billing, setBilling] = useState('')
+  const justPaid = window.location.hash.includes('paid=1')
 
   useEffect(() => {
     supabase
@@ -26,13 +31,14 @@ export default function PendingAccount({ email }: { email: string }) {
   const blocked = signup?.blocked_days ?? []
   const oneTime = signup?.plan === 'one_time'
   const day = typeof signup?.assigned_day === 'number' ? signup.assigned_day : null
+  const cancelled = !!signup?.cancelled_at
 
   return (
     <>
       <section className="card">
         <div className="row between">
           <h2>You’re signed up!</h2>
-          <span className="pill doing">{day !== null ? `Every ${DAYS[day]}` : oneTime ? 'Setting up your cleanup' : 'Picking your day'}</span>
+          <span className={`pill ${cancelled ? 'cancelled' : 'doing'}`}>{cancelled ? 'Cancelled' : day !== null ? `Every ${DAYS[day]}` : oneTime ? 'Setting up your cleanup' : 'Picking your day'}</span>
         </div>
         <ol className="stack" style={{ gap: 6, margin: 0, paddingLeft: 20 }}>
           {day !== null ? (
@@ -116,6 +122,48 @@ export default function PendingAccount({ email }: { email: string }) {
         </section>
       )}
 
+      {signup && !oneTime && !cancelled && (
+        <section className="card">
+          <h2>Autopay</h2>
+          {justPaid && !signup.paid_through && <div className="alert ok">Thanks! Your autopay is set up. It can take a minute to show here.</div>}
+          {signup.paid_through ? (
+            <div className="alert ok">Autopay is on. You’re paid through {niceDate(signup.paid_through)}.</div>
+          ) : (
+            <>
+              <div className="muted">
+                Pay by card. Your first payment is {monthly !== null ? money(monthly + fee) : 'your plan'}
+                {fee ? ' (with the one-time cleanup)' : ''}, then {monthly !== null ? money(monthly) : 'your plan'} on that same day each month.
+              </div>
+              <button
+                className="btn primary"
+                disabled={busy}
+                onClick={async () => {
+                  setBusy(true)
+                  setBilling(await openBilling('checkout'))
+                  setBusy(false)
+                }}
+              >
+                {busy ? 'Opening…' : 'Set up autopay'}
+              </button>
+            </>
+          )}
+          {signup.stripe_customer_id && (
+            <button
+              className="btn"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true)
+                setBilling(await openBilling('portal'))
+                setBusy(false)
+              }}
+            >
+              Manage payments
+            </button>
+          )}
+          {billing && <div className="alert warn">{billing}</div>}
+        </section>
+      )}
+
       <section className="card">
         <h2>Need to change something?</h2>
         <div className="muted">Call or text us and we’ll update it before your first visit.</div>
@@ -128,6 +176,15 @@ export default function PendingAccount({ email }: { email: string }) {
           </a>
         </div>
       </section>
+      {signup && (
+        <CancelService
+          cancelledAt={signup.cancelled_at ?? null}
+          hasAutopay={!!signup.stripe_subscription_id}
+          paidThrough={signup.paid_through}
+          what="sign-up"
+          onChange={(at) => setSignup({ ...signup, cancelled_at: at })}
+        />
+      )}
     </>
   )
 }

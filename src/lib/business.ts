@@ -2,12 +2,24 @@
 export const BUSINESS = {
   name: "Poop Scoopin' Boogie",
   city: 'Tyler, TX',
-  serviceArea: 'Tyler and nearby (Whitehouse, Bullard, Flint, Lindale). Not sure? Sign up and ask.',
+  serviceArea: 'Tyler and nearby (Whitehouse, Bullard, Flint, Lindale). Not sure? Call or text us.',
   tagline: 'We do your dirty work so you don’t have to.',
   // Leave blank to hide. Google Voice number that rings both phones.
   phone: '(903) 347-2494',
   // Leave blank to hide. Example: 'poopscoopinboogie@gmail.com'
   email: 'poopscoopinboogietexas@gmail.com',
+}
+
+/**
+ * Where we go: within this many miles (straight line) of downtown Tyler.
+ * Lindale, Bullard, Flint and Whitehouse are all inside 20 miles.
+ * North of northSouthLat books Monday first; south books Wednesday first
+ * (keep in step with supabase/migrations/0009_area_billing_cancel.sql).
+ */
+export const SERVICE_AREA = {
+  center: { lat: 32.3513, lng: -95.3011 },
+  miles: 20,
+  northSouthLat: 32.3513,
 }
 
 /** tel: / sms: link for the business phone, e.g. tel:+19033472494 */
@@ -50,8 +62,8 @@ export const WORK_DAY = {
   minutesPerYard: 15,
   minutesFirstCleanup: 45,
   // Automatic booking at sign-up (the database does the booking; keep these in step with
-  // supabase/migrations/0008_auto_day.sql): Monday and Wednesday fill first, then the rest,
-  // one yard every half hour from 9 to 5 = 16 yards a day.
+  // supabase/migrations/0009_area_billing_cancel.sql): north Tyler gets Monday first, south
+  // Tyler Wednesday first, then the rest. One yard every half hour from 9 to 5 = 16 yards a day.
   fillFirst: [1, 3],
   fillNext: [2, 4, 5],
   yardsPerDay: 16,
@@ -62,10 +74,13 @@ export const WORK_DAY = {
 /** Plan prices cover this many dogs; each dog past it adds EXTRA_DOG_CENTS a month. */
 export const DOGS_INCLUDED = 3
 export const EXTRA_DOG_CENTS = 1000
+/** The price stops going up here: 8 or more dogs pays the 8-dog price. */
+export const DOGS_MAX_PRICED = 8
 export const PLAN_BASE_CENTS = { weekly: 6000, biweekly: 4000 } as const
 
+/** Keep in step with supabase/functions/billing/index.ts, which charges this. */
 export function monthlyPriceCents(plan: 'weekly' | 'biweekly', dogCount: number): number {
-  return PLAN_BASE_CENTS[plan] + Math.max(0, dogCount - DOGS_INCLUDED) * EXTRA_DOG_CENTS
+  return PLAN_BASE_CENTS[plan] + Math.max(0, Math.min(dogCount, DOGS_MAX_PRICED) - DOGS_INCLUDED) * EXTRA_DOG_CENTS
 }
 
 export const PLANS = [
@@ -74,7 +89,7 @@ export const PLANS = [
     name: 'Weekly',
     price: '$60',
     per: '/month',
-    detail: 'Once a week, 1–3 dogs. +$10/month for each dog after 3.',
+    detail: 'Once a week, 1–3 dogs. +$10/month for each dog after 3, up to $110.',
     popular: true,
   },
   {
@@ -82,7 +97,7 @@ export const PLANS = [
     name: 'Every other week',
     price: '$40',
     per: '/month',
-    detail: 'Every two weeks, 1–3 dogs. +$10/month for each dog after 3.',
+    detail: 'Every two weeks, 1–3 dogs. +$10/month for each dog after 3, up to $90.',
     popular: false,
   },
   {
@@ -114,7 +129,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How much does it cost?',
-    a: 'Weekly service is $60 a month and every other week is $40 a month, for 1–3 dogs. Each dog after 3 adds $10 a month (so 4 dogs is $70 or $50). If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: free if it’s been under 2 weeks, $15 for 2–4 weeks, $30 for 1–2 months, and $50 for over 2 months. If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
+    a: 'Weekly service is $60 a month and every other week is $40 a month, for 1–3 dogs. Each dog after 3 adds $10 a month (so 4 dogs is $70 or $50), and it tops out at 8 dogs: $110 or $90. If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: free if it’s been under 2 weeks, $15 for 2–4 weeks, $30 for 1–2 months, and $50 for over 2 months. If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
   },
   {
     q: 'What if my grass is long?',
@@ -122,15 +137,19 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Is there a contract?',
-    a: 'No contract. Cancel anytime before your next month starts.',
+    a: 'No contract. Cancel anytime from your account page, or call or text us. We keep scooping through the month you’ve paid for, and you won’t be charged again.',
   },
   {
     q: 'How do I pay?',
-    a: 'You pay monthly at the start of the month by card, with automatic payments so you don’t have to think about it. You can update your card or see your visits anytime from your account page.',
+    a: 'By card, with autopay. Your first payment is the day you sign up, and your plan renews on that same day each month. If there’s a one-time cleanup fee, it’s on the first payment only. Update your card, see receipts, or cancel anytime from your account page. Payments go through Stripe, so we never see your card number.',
   },
   {
     q: 'Can I pick my service day?',
-    a: 'We book your day for you when you sign up, from the open spots that week, and we skip any days you tell us don’t work (like trash day). Your day shows on the sign-up confirmation and your account page. We scoop Monday through Friday, 9 to 5.',
+    a: 'We book your day for you when you sign up, and we skip any days you tell us don’t work (like trash day). We keep neighbors on the same day so we spend our time scooping, not driving: north Tyler is usually Monday and south Tyler is usually Wednesday. Your day shows on the sign-up confirmation and your account page. We scoop Monday through Friday, 9 to 5.',
+  },
+  {
+    q: 'Will you text me?',
+    a: 'Yes, from (903) 347-2494: a reminder the night before each visit, and a quick “all done” text when we leave. Your photos come by email. You can turn either text off anytime on your account page.',
   },
   {
     q: 'What if it rains?',
@@ -138,7 +157,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Where do you work?',
-    a: 'Tyler and nearby towns like Whitehouse, Bullard, Flint, and Lindale. If you’re not sure we come to you, sign up and we’ll let you know.',
+    a: 'Tyler and nearby towns like Whitehouse, Bullard, Flint, and Lindale, about 20 miles around downtown Tyler. The sign-up checks your address for you. If it says you’re outside our area, call or text us and we’ll see what we can do.',
   },
   {
     q: 'Who are you?',

@@ -39,6 +39,11 @@ export interface Client {
   reminder_texts?: boolean
   /** Text "service done" after each visit. Missing until migration 0003 runs; treat missing as on. */
   done_texts?: boolean
+  /** Stripe ids, set by the payment system. */
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+  /** When they tapped "Cancel my service". Missing until migration 0009 runs. */
+  cancel_requested_at?: string | null
   dogs?: Dog[]
 }
 
@@ -71,6 +76,13 @@ export interface Signup {
   blocked_days?: number[]
   /** Day the database booked at sign-up. Missing until migration 0008 runs. */
   assigned_day?: number | null
+  /** Missing until migration 0009 runs. */
+  lat?: number | null
+  lng?: number | null
+  cancelled_at?: string | null
+  stripe_customer_id?: string | null
+  stripe_subscription_id?: string | null
+  paid_through?: string | null
   initial_fee_cents?: number
   created_at: string
 }

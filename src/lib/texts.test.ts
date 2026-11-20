@@ -35,6 +35,9 @@ describe('monthly price', () => {
   it('covers 1–3 dogs, then $10 each', () => {
     expect(monthlyPriceCents('weekly', 3)).toBe(6000)
     expect(monthlyPriceCents('weekly', 4)).toBe(7000)
+    expect(monthlyPriceCents('weekly', 8)).toBe(11000)
+    expect(monthlyPriceCents('weekly', 12)).toBe(11000)
+    expect(monthlyPriceCents('biweekly', 12)).toBe(9000)
     expect(monthlyPriceCents('biweekly', 5)).toBe(6000)
   })
 })

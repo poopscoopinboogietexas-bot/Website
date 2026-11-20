@@ -63,6 +63,14 @@ export default function ClientEdit() {
           ...(typeof signup.assigned_day === 'number' ? { service_day: signup.assigned_day } : {}),
           instructions: signup.notes,
           ...((signup.initial_fee_cents ?? 0) > 0 ? { initial_fee_cents: signup.initial_fee_cents, initial_fee_paid: false } : {}),
+          // Paid at sign-up: keep the Stripe link so future payments find this client.
+          ...(signup.stripe_customer_id
+            ? {
+                stripe_customer_id: signup.stripe_customer_id,
+                stripe_subscription_id: signup.stripe_subscription_id ?? null,
+                ...(signup.paid_through ? { paid_through: signup.paid_through, initial_fee_paid: true } : {}),
+              }
+            : {}),
         }
       : BLANK,
   )
@@ -156,12 +164,15 @@ export default function ClientEdit() {
     if (body.initial_fee_paid === undefined) delete body.initial_fee_paid
     if (body.bag_backup === undefined) delete body.bag_backup
     if (body.blocked_days === undefined) delete body.blocked_days
+    if (body.stripe_subscription_id === undefined) delete body.stripe_subscription_id
+    if (body.cancel_requested_at === undefined) delete body.cancel_requested_at
+    if (body.stripe_customer_id === undefined) delete body.stripe_customer_id
     const res = isNew
       ? await supabase.from('clients').insert(body).select('id').single()
       : await supabase.from('clients').update(body).eq('id', clientId!).select('id').single()
     if (res.error) {
       setError(
-        /reminder_texts|done_texts|initial_fee|bag_backup|blocked_days/.test(res.error.message)
+        /reminder_texts|done_texts|initial_fee|bag_backup|blocked_days|stripe_subscription_id|cancel_requested_at/.test(res.error.message)
           ? 'Could not save: this needs the database updates on the list in SETUP.md (pending-updates.sql).'
           : 'Could not save. Check that name, address and day are filled in.',
       )
@@ -410,6 +421,13 @@ export default function ClientEdit() {
             <span className={`pill ${form.status}`}>{STATUS_LABEL[form.status]}</span>
             <span className="muted">{form.paid_through ? `Paid through ${form.paid_through}` : 'No payment recorded'}</span>
           </div>
+          {form.stripe_subscription_id && <div className="muted">Autopay is on. Payments update this page on their own.</div>}
+          {form.cancel_requested_at && form.status !== 'cancelled' && (
+            <div className="alert warn">
+              They asked to cancel on {new Date(form.cancel_requested_at).toLocaleDateString()}. Keep scooping through
+              {form.paid_through ? ` ${form.paid_through}` : ' the month they paid for'}. Autopay stops on its own and marks them Cancelled when it ends.
+            </div>
+          )}
           <label className="field">
             Status
             <select id="status" value={form.status} onChange={(e) => setStatus(e.target.value as ClientStatus)}>

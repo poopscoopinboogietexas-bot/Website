@@ -6,7 +6,7 @@ import { BUSINESS, phoneLink, FAQS, PLANS } from '../lib/business'
 
 const STEPS = [
   { title: 'Sign up', body: 'Pick a plan and tell us about your yard and dogs. Takes two minutes.' },
-  { title: 'We scoop', body: 'Same day every week. You don’t need to be home.' },
+  { title: 'We scoop', body: 'Same day every week. We text you the night before. You don’t need to be home.' },
   { title: 'You get proof', body: 'A photo of your clean yard and latched gate lands in your email after every visit.' },
 ]
 
@@ -74,7 +74,7 @@ export default function Home() {
                 </article>
               ))}
             </div>
-            <p className="muted center-text">No contracts. Cancel anytime. Yard not cleaned lately? A one-time cleanup fee is added to your first bill: $15 (2–4 weeks), $30 (1–2 months) or $50 (over 2 months).</p>
+            <p className="muted center-text">No contracts. Cancel anytime from your account page. 8 or more dogs tops out at $110 a month. Yard not cleaned lately? A one-time cleanup fee is added to your first bill: $15 (2–4 weeks), $30 (1–2 months) or $50 (over 2 months).</p>
           </div>
         </section>
 
@@ -133,7 +133,7 @@ export default function Home() {
         <section className="band cta">
           <div className="band-inner center-text">
             <h2 className="section-title">Ready to get your yard back?</h2>
-            <p>Sign up in two minutes. We’ll pick your day and text you before your first visit.</p>
+            <p>Sign up in two minutes. We book your day right away and text you the night before every visit.</p>
             <Link to="/signup" className="btn primary big-inline">
               Sign up for scoopin’
             </Link>

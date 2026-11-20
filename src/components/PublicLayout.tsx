@@ -42,6 +42,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
         <nav className="row" aria-label="Footer">
           <Link to="/signup">Sign up</Link>
           <Link to="/faq">FAQ</Link>
+          <Link to="/policies">Policies</Link>
           <Link to={accountLink}>{session ? 'My account' : 'Customer login'}</Link>
         </nav>
       </footer>

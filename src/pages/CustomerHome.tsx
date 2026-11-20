@@ -1,6 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { BUSINESS } from '../lib/business'
 import PendingAccount from '../components/PendingAccount'
+import CancelService from '../components/CancelService'
+import { openBilling } from '../lib/billing'
 import { useAuth } from '../lib/auth'
 import { money } from '../lib/schedule'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
@@ -24,6 +26,7 @@ export default function CustomerHome() {
   const [textsSaved, setTextsSaved] = useState('')
   const [billing, setBilling] = useState('')
   const [busy, setBusy] = useState(false)
+  const justPaid = window.location.hash.includes('paid=1')
 
   useEffect(() => {
     supabase
@@ -77,15 +80,13 @@ export default function CustomerHome() {
     setTextsSaved(error ? 'Could not save. Try again in a minute.' : 'Saved.')
   }
 
-  async function openBilling() {
+  async function billingPage() {
+    if (!client) return
     setBusy(true)
     setBilling('')
-    const { data, error } = await supabase.functions.invoke('billing-portal', {
-      body: { return_url: window.location.origin + window.location.pathname },
-    })
+    const problem = await openBilling(client.stripe_customer_id ? 'portal' : 'checkout')
     setBusy(false)
-    if (!error && data?.url) window.location.href = data.url
-    else setBilling('Online payments aren’t switched on yet. We’ll text you a payment link.')
+    setBilling(problem)
   }
 
   const header = (
@@ -129,9 +130,13 @@ export default function CustomerHome() {
         </div>
         {client.status === 'payment_issue' && <div className="alert warn">Your last payment didn’t go through. Please update your card so service keeps going.</div>}
         {client.status === 'paused' && <div className="alert bad">Service is paused until your payment goes through.</div>}
-        <button className="btn primary" onClick={openBilling} disabled={busy}>
-          {busy ? 'Opening…' : 'Pay or update card'}
+        {justPaid && <div className="alert ok">Thanks! Your autopay is set up. It can take a minute to show here.</div>}
+        <button className="btn primary" onClick={billingPage} disabled={busy}>
+          {busy ? 'Opening…' : client.stripe_customer_id ? 'Manage payments' : 'Set up autopay'}
         </button>
+        <div className="muted">
+          {client.stripe_customer_id ? 'Update your card and see your receipts.' : 'Pay by card, renews on the same day each month.'}
+        </div>
         {billing && <div className="alert warn">{billing}</div>}
       </section>
 
@@ -199,6 +204,16 @@ export default function CustomerHome() {
         </label>
         {textsSaved && <div className={`alert ${textsSaved.startsWith('Saved') ? 'ok' : 'bad'}`}>{textsSaved}</div>}
       </section>
+
+      {client.status !== 'cancelled' && (
+        <CancelService
+          cancelledAt={client.cancel_requested_at ?? null}
+          hasAutopay={!!client.stripe_subscription_id}
+          paidThrough={client.paid_through}
+          what="service"
+          onChange={(at) => setClient({ ...client, cancel_requested_at: at })}
+        />
+      )}
     </main>
   )
 }

@@ -49,7 +49,7 @@ const c5 = client({ name: 'Tom Becker', address: '2214 Old Bullard Rd, Tyler, TX
 const c7 = client({ name: 'Sam Ortiz', address: '3410 Troup Hwy, Tyler, TX 75701', service_day: tomorrowDay, phone: '(903) 555-0123', route_order: 10 })
 const c8 = client({ name: 'Kelly Brandt', address: '1200 E Grande Blvd, Tyler, TX 75703', service_day: tomorrowDay, phone: '(903) 555-0166', bag_disposal: 'take_away', route_order: 20 })
 const c9 = client({ name: 'Bev Holt', address: '505 W Rusk St, Tyler, TX 75701', service_day: tomorrowDay, phone: '(903) 555-0111', reminder_texts: false, route_order: 30 })
-const c6 = client({ name: 'Grace Okafor', address: '6610 Old Jacksonville Hwy, Tyler, TX 75703', service_day: otherDay, price_cents: 8500 })
+const c6 = client({ cancel_requested_at: new Date().toISOString(), name: 'Grace Okafor', address: '6610 Old Jacksonville Hwy, Tyler, TX 75703', service_day: otherDay, price_cents: 8500 })
 
 const db: Record<string, Row[]> = {
   clients: [c1, c2, c3, c4, c5, c6, c7, c8, c9],
@@ -66,7 +66,7 @@ const db: Record<string, Row[]> = {
     { id: uid(), client_id: c1.id, visit_date: daysAgo(7), status: 'complete', checklist: {}, yard_photo_path: 'sample/yard', gate_photo_path: 'sample/gate', notes: '', completed_at: daysAgo(7), emailed_at: daysAgo(7), email_error: null },
   ],
   signups: [
-    { id: uid(), name: 'Jasmine Cole', phone: '(903) 555-0199', email: 'jasmine@example.com', address: '7711 Paluxy Dr, Tyler, TX 75703', dog_count: 2, plan: 'weekly', last_cleaned: '1_2_months', initial_fee_cents: 3000, blocked_days: [2], assigned_day: 1, notes: 'Two goldens, side gate code 2580', handled: false, created_at: new Date().toISOString() },
+    { id: uid(), name: 'Jasmine Cole', phone: '(903) 555-0199', email: 'jasmine@example.com', address: '7711 Paluxy Dr, Tyler, TX 75703', dog_count: 2, plan: 'weekly', last_cleaned: '1_2_months', initial_fee_cents: 3000, blocked_days: [2], assigned_day: 1, paid_through: localDate(new Date(Date.now() + 29 * 86_400_000)), stripe_customer_id: 'cus_demo', notes: 'Two goldens, side gate code 2580', handled: false, created_at: new Date().toISOString() },
   ],
   client_notes: [
     { id: uid(), client_id: c2.id, body: 'Soft stool in back corner, texted Marcus a photo', created_at: new Date(Date.now() - 86_400_000 * 2).toISOString() },
@@ -175,11 +175,13 @@ window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
   // Fake map lookups: a stable spot around Tyler for each address.
   if (url.hostname === 'nominatim.openstreetmap.org') {
     const q = url.searchParams.get('q') ?? ''
+    if (/dallas/i.test(q)) return reply([{ lat: '32.7767', lon: '-96.7970' }])
     let h = 0
     for (const ch of q) h = (h * 31 + ch.charCodeAt(0)) | 0
     return reply([{ lat: String(32.35 + ((h & 0xff) / 255 - 0.5) * 0.12), lon: String(-95.3 + (((h >> 8) & 0xff) / 255 - 0.5) * 0.12) }])
   }
-  if (url.pathname === '/rest/v1/rpc/is_staff') return reply(true)
+  // Open the demo with #/account after running localStorage.demoCustomer = '1' to see a customer's page.
+  if (url.pathname === '/rest/v1/rpc/is_staff') return reply(!localStorage.getItem('demoCustomer'))
   if (url.pathname === '/rest/v1/rpc/signup_day') return reply(3)
   if (url.pathname.startsWith('/rest/v1/rpc/')) return reply(null, 204)
   if (url.pathname.startsWith('/rest/v1/')) return handleRest(url, init)

@@ -14,6 +14,7 @@ Still to run:
 - [ ] `0006_blocked_days.sql`: days that don't work for a customer (asked at sign-up)
 - [ ] `0007_signup_self_read.sql`: new customers can see their own sign-up on their account page
 - [ ] `0008_auto_day.sql`: books the service day automatically at sign-up (Monday and Wednesday first, 16 yards a day)
+- [ ] `0009_area_billing_cancel.sql`: north Tyler on Monday / south on Wednesday, autopay (Stripe), the Cancel button, and the 7-day pause
 
 Already run: `0001_init.sql`, `0002_customers.sql`.
 
@@ -74,14 +75,35 @@ Out of the box, "confirm your email" and "reset your password" emails come from 
    - **Reset password**: subject `Set a new password for Poop Scoopin' Boogie`, body from [`supabase/email-templates/reset-password.html`](supabase/email-templates/reset-password.html)
 3. In **Authentication → Rate Limits**, raise **emails per hour** to `100`.
 
-## 4. Turn on online payments (Stripe) — later
+## 4. Turn on online payments (Stripe)
 
-1. Make a free account at [stripe.com](https://stripe.com) and finish the business details.
-2. In Stripe, go to **Settings → Billing → Customer portal** and click **Activate**.
-3. Copy your **Secret key** from **Developers → API keys**. In Supabase **Edge Functions → Secrets**, add `STRIPE_SECRET_KEY`.
-4. Deploy a new function named exactly `billing-portal` with the code from [`supabase/functions/billing-portal/index.ts`](supabase/functions/billing-portal/index.ts).
+How it works: after signing up, customers tap **Set up autopay** and pay by card on Stripe's page. Their plan renews on that same day every month. The one-time cleanup fee is on the first payment only. On their account page they can update their card, see receipts, or cancel (billing stops at the end of the month they paid for). If a card fails, they show as **Payment issue**; after 7 days they're paused and land on your **Call list**. When they pay, they go back to **Active** on their own.
 
-Until this is done, the customer page's "Pay or update card" button says online payments are coming soon.
+Never paste a Stripe key into a chat, an email, or this website's code. Keys only go in **Supabase → Edge Functions → Secrets**.
+
+Start in **test mode** (fake cards, no real money), then switch to live at the end.
+
+1. **Make the account.** Sign up free at [stripe.com](https://stripe.com) with the business email. Fill in the business details: business type (sole proprietor is fine), your name and address, SSN or EIN, the bank account where payouts go, website `https://poopscoopinboogie.org`, and a description like "Residential dog waste removal, monthly service." For **statement descriptor** (what shows on card statements) use `POOP SCOOPIN BOOGIE`.
+2. **Turn on test mode.** Flip the **Test mode** switch (top right), or open a **Sandbox**. Do steps 3 to 8 there.
+3. **Customer portal.** Go to **Settings → Billing → Customer portal** and click **Activate**. Turn on:
+   - Payment methods: customers can update them
+   - Invoice history: show it
+   - Cancel subscriptions: on, **at end of billing period**, and no cancellation fee
+   - Leave "Customers can switch plans" **off**.
+   Save.
+4. **Failed payments.** Go to **Settings → Billing → Subscriptions and emails**. Under **Manage failed payments**, turn on **Smart Retries** and the email that tells customers their card failed. For "If all retries for a payment fail", pick **mark the subscription as unpaid** (not cancel). Under **Settings → Business → Customer emails**, turn on **Successful payments** so they get receipts.
+5. **Secret key.** Go to **Developers → API keys** and copy the **Secret key** (starts with `sk_test_`). In Supabase go to **Edge Functions → Secrets → Add new secret**: name `STRIPE_SECRET_KEY`, paste the key, save.
+6. **Two functions.** In Supabase go to **Edge Functions → Deploy a new function → Via Editor**:
+   - Name `billing`, paste everything from [`supabase/functions/billing/index.ts`](supabase/functions/billing/index.ts), click **Deploy**.
+   - Name `stripe-webhook`, paste everything from [`supabase/functions/stripe-webhook/index.ts`](supabase/functions/stripe-webhook/index.ts), click **Deploy**. Then open its **Details** (or settings) and turn **off** "Verify JWT" / "Enforce JWT verification", and save. Stripe calls this one, not a logged-in person.
+7. **Webhook.** In Stripe go to **Developers → Webhooks → Add endpoint** (it may say **Add destination**, then **Webhook endpoint**).
+   - URL: `https://nyyjzuruohumoscrtksm.supabase.co/functions/v1/stripe-webhook`
+   - Events: `checkout.session.completed`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, `customer.subscription.deleted`
+   - Save, then copy its **Signing secret** (starts with `whsec_`). In Supabase **Edge Functions → Secrets**, add `STRIPE_WEBHOOK_SECRET` with it.
+8. **Test it.** Run the database updates at the top of this page if you haven't yet. Sign up on the website with an email you can check, tap **Set up autopay**, and pay with card `4242 4242 4242 4242`, any future date, any 3 digits. In the staff app, **Clients → New sign-ups** should show "Autopay on". Log in as that customer and try **Manage payments** and **Cancel my service**.
+9. **Go live.** Turn test mode off and repeat steps 3, 4, 5 and 7 in live mode (Stripe keeps test and live settings separate). In Supabase, replace the two secrets with the live ones (`sk_live_…` and the live `whsec_…`). Then delete the test customer from the staff app.
+
+If you change someone's price in the staff app (more dogs, say), change it in Stripe too: **Customers → their name → subscription → Update**. One-time cleanups aren't on autopay; send those a **Payment link** from Stripe.
 
 ## 5. Put it on your phones
 

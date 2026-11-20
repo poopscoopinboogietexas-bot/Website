@@ -110,6 +110,7 @@ a { color: var(--denim); }
 .btn.primary { background: var(--pink); color: #fff; box-shadow: 0 3px 0 var(--ink); }
 .btn.primary:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
 .btn.denim { background: var(--denim); color: #fff; }
+.btn.danger { background: var(--bad); color: #fff; border-color: var(--bad); }
 .btn.big { width: 100%; font-size: 1.15rem; min-height: 58px; }
 .btn.small { min-height: 36px; padding: 6px 12px; font-size: 0.9rem; }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; transform: none; }

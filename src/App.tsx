@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './lib/auth'
 import { isConfigured } from './lib/supabase'
 import Home from './pages/Home'
 import Faq from './pages/Faq'
+import Policies from './pages/Policies'
 import Signup from './pages/Signup'
 import Login from './pages/Login'
 import CustomerHome from './pages/CustomerHome'
@@ -31,6 +32,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/faq" element={<Faq />} />
+          <Route path="/policies" element={<Policies />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<LoginRoute />} />
           <Route path="/account" element={<CustomerRoute />} />

@@ -4,6 +4,7 @@ import { fetchClients } from '../lib/data'
 import { supabase } from '../lib/supabase'
 import { money } from '../lib/schedule'
 import { DAYS, STATUS_LABEL, type Client, type Signup } from '../lib/types'
+import { niceDate } from '../lib/billing'
 
 const SIGNUP_PLAN = { weekly: 'Weekly', biweekly: 'Every other week', one_time: 'One-time cleanup' }
 
@@ -58,7 +59,16 @@ export default function Clients() {
               <span className="muted">
                 {s.phone} · {s.email}
               </span>
-              {typeof s.assigned_day === 'number' && <span className="pill dog">Booked: {DAYS[s.assigned_day]}</span>}
+              {s.cancelled_at ? (
+                <span className="pill cancelled">Cancelled their sign-up</span>
+              ) : (
+                typeof s.assigned_day === 'number' && <span className="pill dog">Booked: {DAYS[s.assigned_day]}</span>
+              )}
+              {s.paid_through ? (
+                <span className="pill active">Autopay on · paid through {niceDate(s.paid_through)}</span>
+              ) : (
+                s.plan !== 'one_time' && !s.cancelled_at && <span className="pill payment_issue">Hasn’t set up autopay</span>
+              )}
               {(s.initial_fee_cents ?? 0) > 0 && (
                 <span className="pill payment_issue">Initial cleanup: +${(s.initial_fee_cents ?? 0) / 100} · make it the last stop</span>
               )}
@@ -98,7 +108,10 @@ export default function Clients() {
             <span className="grow stack" style={{ gap: 2 }}>
               <span className="row between">
                 <strong>{c.name}</strong>
-                <span className={`pill ${c.status}`}>{STATUS_LABEL[c.status]}</span>
+                <span className="row" style={{ gap: 4 }}>
+                  {c.cancel_requested_at && c.status !== 'cancelled' && <span className="pill cancelled">Wants to cancel</span>}
+                  <span className={`pill ${c.status}`}>{STATUS_LABEL[c.status]}</span>
+                </span>
               </span>
               <span className="muted">{c.address}</span>
               <span className="muted">
