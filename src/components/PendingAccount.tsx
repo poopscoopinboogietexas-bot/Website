@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import CancelService from './CancelService'
+import ChangePlan from './ChangePlan'
 import { niceDate, openBilling } from '../lib/billing'
 import { BUSINESS, CLEANUP_FEES, monthlyPriceCents, phoneLink, PLANS } from '../lib/business'
 import { money } from '../lib/schedule'
@@ -78,6 +79,16 @@ export default function PendingAccount({ email }: { email: string }) {
               {plan?.name ?? signup.plan}
               {monthly !== null ? ` · ${money(monthly)}/month` : ' · from $60'}
             </dd>
+            {signup.plan !== 'one_time' && !cancelled && (
+              <dd style={{ gridColumn: '1 / -1' }}>
+                <ChangePlan
+                  plan={signup.plan}
+                  dogs={signup.dog_count}
+                  hasAutopay={!!signup.stripe_subscription_id}
+                  onChanged={(p, dogs) => setSignup({ ...signup, plan: p, dog_count: dogs })}
+                />
+              </dd>
+            )}
             {day !== null && (
               <>
                 <dt>Service day</dt>

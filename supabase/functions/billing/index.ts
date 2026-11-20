@@ -5,6 +5,8 @@
 //   action "portal":   open the Stripe customer portal (update card, receipts).
 //   action "cancel":   stop autopay at the end of the paid month.
 //   action "keep":     undo "cancel".
+//   action "change":   switch weekly / every other week or the number of dogs. Updates the
+//                      schedule and the autopay price (new price starts with the next bill).
 //
 // Secrets (Supabase > Edge Functions > Secrets):
 //   STRIPE_SECRET_KEY   from Stripe > Developers > API keys (starts with sk_)
@@ -30,22 +32,33 @@ function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 }
 
-async function stripe(path: string, params: Record<string, string>) {
+async function stripe(path: string, params?: Record<string, string>) {
   const res = await fetch(`https://api.stripe.com/v1/${path}`, {
-    method: 'POST',
+    method: params ? 'POST' : 'GET',
     headers: {
       Authorization: `Bearer ${Deno.env.get('STRIPE_SECRET_KEY')}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: new URLSearchParams(params),
+    ...(params ? { body: new URLSearchParams(params) } : {}),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data?.error?.message ?? 'Stripe error')
   return data
 }
 
+const money = (cents: number) => '$' + (cents / 100).toFixed(cents % 100 ? 2 : 0)
+
 function monthlyCents(plan: string, dogs: number) {
   return PLAN_BASE_CENTS[plan] + Math.max(0, Math.min(dogs, DOGS_MAX_PRICED) - DOGS_INCLUDED) * EXTRA_DOG_CENTS
+}
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+
+/** Next date (YYYY-MM-DD, Tyler time) that falls on this weekday, today included. */
+function nextDate(weekday: number) {
+  const today = new Date(new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' }) + 'T12:00:00Z')
+  const add = (weekday - today.getUTCDay() + 7) % 7
+  return new Date(today.getTime() + add * 86_400_000).toISOString().slice(0, 10)
 }
 
 function safeReturn(url: unknown) {
@@ -54,6 +67,8 @@ function safeReturn(url: unknown) {
 
 type Billable = {
   kind: 'client' | 'signup'
+  // deno-lint-ignore no-explicit-any
+  row: any
   id: string
   name: string
   email: string
@@ -67,10 +82,11 @@ type Billable = {
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
-  if (!Deno.env.get('STRIPE_SECRET_KEY')) return json({ error: 'not_set_up' }, 503)
+  const hasStripe = !!Deno.env.get('STRIPE_SECRET_KEY')
 
   const body = await req.json().catch(() => ({}))
   const action: string = body.action ?? 'portal'
+  if (!hasStripe && action !== 'change') return json({ error: 'not_set_up' }, 503)
   const admin = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const asUser = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_ANON_KEY')!, {
     global: { headers: { Authorization: req.headers.get('Authorization') ?? '' } },
@@ -94,6 +110,7 @@ Deno.serve(async (req) => {
     if (c) {
       who = {
         kind: 'client',
+        row: c,
         id: c.id,
         name: c.name,
         email: c.email,
@@ -158,6 +175,55 @@ Deno.serve(async (req) => {
       return json({ ok: true })
     }
 
+    if (action === 'change') {
+      const plan = body.plan
+      const dogs = Math.round(Number(body.dog_count))
+      if ((plan !== 'weekly' && plan !== 'biweekly') || !(dogs >= 1 && dogs <= 20)) return json({ error: 'bad_change' }, 400)
+      const monthly = monthlyCents(plan, dogs)
+
+      // Autopay first, so the schedule never changes without the price changing too.
+      // The new price starts with the next bill (no partial-month charges or refunds).
+      if (who.subscription) {
+        if (!hasStripe) return json({ error: 'not_set_up' }, 503)
+        const current = await stripe(`subscriptions/${who.subscription}`)
+        const item = current.items?.data?.[0]
+        if (!item) throw new Error('no subscription item')
+        const product = await stripe('products', { name: PLAN_NAME[plan] })
+        await stripe(`subscriptions/${who.subscription}`, {
+          'items[0][id]': item.id,
+          'items[0][price_data][currency]': 'usd',
+          'items[0][price_data][product]': product.id,
+          'items[0][price_data][unit_amount]': String(monthly),
+          'items[0][price_data][recurring][interval]': 'month',
+          proration_behavior: 'none',
+        })
+      }
+
+      const label = (p: string) => (p === 'weekly' ? 'Weekly' : 'Every other week')
+      if (who.kind === 'client') {
+        const c = who.row
+        const startsBiweekly = plan === 'biweekly' && !(c.plan === 'biweekly' && c.biweekly_anchor)
+        await admin
+          .from('clients')
+          .update({
+            plan,
+            price_cents: monthly,
+            biweekly_anchor: plan === 'biweekly' ? (startsBiweekly ? nextDate(c.service_day) : c.biweekly_anchor) : null,
+          })
+          .eq('id', c.id)
+        const dogText = `${dogs} dog${dogs === 1 ? '' : 's'}`
+        const start = startsBiweekly ? ` Every other ${DAY_NAMES[c.service_day]}, starting ${nextDate(c.service_day)}.` : ''
+        await admin.from('client_notes').insert({
+          client_id: c.id,
+          created_by: null,
+          body: `Changed their plan on the website: ${label(c.plan)} to ${label(plan)}, ${dogText}, ${money(monthly)}/month (was ${money(c.price_cents)}). New price starts with their next bill.${start}`,
+        })
+      } else {
+        await admin.from('signups').update({ plan, dog_count: dogs }).eq('id', who.id)
+      }
+      return json({ ok: true, monthly })
+    }
+
     return json({ error: 'unknown_action' }, 400)
   } catch (e) {
     return json({ error: e instanceof Error ? e.message : 'stripe_failed' }, 502)
@@ -168,6 +234,7 @@ Deno.serve(async (req) => {
 function fromSignup(s: any): Billable {
   return {
     kind: 'signup',
+    row: s,
     id: s.id,
     name: s.name,
     email: s.email,

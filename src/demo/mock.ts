@@ -183,6 +183,11 @@ window.fetch = async (input: RequestInfo | URL, init: RequestInit = {}) => {
   // Open the demo with #/account after running localStorage.demoCustomer = '1' to see a customer's page.
   if (url.pathname === '/rest/v1/rpc/is_staff') return reply(!localStorage.getItem('demoCustomer'))
   if (url.pathname === '/rest/v1/rpc/signup_day') return reply(3)
+  // Payments: plan changes "work"; Stripe pages aren't part of the demo.
+  if (url.pathname === '/functions/v1/billing') {
+    const body = JSON.parse(String(init.body ?? '{}'))
+    return body.action === 'change' ? reply({ ok: true }) : reply({ error: 'not_set_up' }, 503)
+  }
   if (url.pathname.startsWith('/rest/v1/rpc/')) return reply(null, 204)
   if (url.pathname.startsWith('/rest/v1/')) return handleRest(url, init)
   return realFetch(input, init)
@@ -230,7 +235,7 @@ const photos = new Map<string, string>()
 })
 
 // ---- Complete-job email ----
-;(supabase.functions as any).invoke = async (_name: string, opts: { body: { visit_id: string } }) => {
+;(supabase.functions as any).invoke = async (_name: string, opts: { body: any }) => {
   const visit = db.visits.find((v) => v.id === opts.body.visit_id)
   if (!visit?.yard_photo_path || !visit?.gate_photo_path) return { data: { ok: false, error: 'Add both the yard and gate photos first.' }, error: null }
   Object.assign(visit, { status: 'complete', completed_at: new Date().toISOString(), emailed_at: new Date().toISOString() })

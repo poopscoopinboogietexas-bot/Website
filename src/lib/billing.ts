@@ -1,4 +1,11 @@
+import { DOGS_INCLUDED, DOGS_MAX_PRICED, EXTRA_DOG_CENTS, PLAN_BASE_CENTS } from './business'
 import { supabase } from './supabase'
+
+/** Best guess at the dog count a monthly price was set for (staff can set any price). */
+export function dogsFromPrice(plan: 'weekly' | 'biweekly', cents: number): number {
+  const extra = Math.round((cents - PLAN_BASE_CENTS[plan]) / EXTRA_DOG_CENTS)
+  return extra > 0 ? Math.min(DOGS_INCLUDED + extra, DOGS_MAX_PRICED) : 1
+}
 
 /** 2026-11-30 -> November 30 */
 export const niceDate = (d: string) => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric' })

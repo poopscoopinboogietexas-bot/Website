@@ -2,7 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { BUSINESS } from '../lib/business'
 import PendingAccount from '../components/PendingAccount'
 import CancelService from '../components/CancelService'
-import { openBilling } from '../lib/billing'
+import ChangePlan from '../components/ChangePlan'
+import { dogsFromPrice, openBilling } from '../lib/billing'
 import { useAuth } from '../lib/auth'
 import { money } from '../lib/schedule'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
@@ -138,6 +139,14 @@ export default function CustomerHome() {
           {client.stripe_customer_id ? 'Update your card and see your receipts.' : 'Pay by card, renews on the same day each month.'}
         </div>
         {billing && <div className="alert warn">{billing}</div>}
+        {client.status !== 'cancelled' && (
+          <ChangePlan
+            plan={client.plan}
+            dogs={Math.max((client.dogs ?? []).length, dogsFromPrice(client.plan, client.price_cents))}
+            hasAutopay={!!client.stripe_subscription_id}
+            onChanged={(plan, _dogs, monthly) => setClient({ ...client, plan, price_cents: monthly })}
+          />
+        )}
       </section>
 
       <section className="card">
