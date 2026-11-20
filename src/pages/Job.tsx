@@ -5,7 +5,7 @@ import { compressPhoto } from '../lib/photos'
 import { localDate, mapsDirectionsUrl } from '../lib/schedule'
 import { ARRIVAL_CHECKLIST, FINISH_CHECKLIST } from '../lib/sop'
 import { PHOTO_BUCKET, supabase } from '../lib/supabase'
-import { TEMPERAMENT_LABEL, type Client, type Visit } from '../lib/types'
+import { type Client, type Visit } from '../lib/types'
 import { cleanupPending, copyText, doneText, mowText, phoneDigits, smsLink, wantsDoneText } from '../lib/texts'
 import CleanupPrice from '../components/CleanupPrice'
 
@@ -187,7 +187,6 @@ export default function Job() {
               <strong>{d.name}</strong> {d.breed && <span className="muted">· {d.breed}</span>}
               {d.notes && <div className="muted">{d.notes}</div>}
             </div>
-            <span className={`pill ${d.temperament === 'keep_out' ? 'paused' : 'dog'}`}>{TEMPERAMENT_LABEL[d.temperament]}</span>
           </div>
         ))}
       </section>

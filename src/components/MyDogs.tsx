@@ -3,9 +3,9 @@ import { BUSINESS, DOGS_MAX_PRICED, monthlyPriceCents } from '../lib/business'
 import { dogsFromPrice } from '../lib/billing'
 import { money } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
-import { TEMPERAMENT_LABEL, type Client, type Dog, type Temperament } from '../lib/types'
+import { type Client, type Dog } from '../lib/types'
 
-const BLANK = { name: '', breed: '', temperament: 'friendly' as Temperament, notes: '' }
+const BLANK = { name: '', breed: '', notes: '' }
 
 /** "Your dogs" on the customer page: add a new dog or remove one, and the monthly price follows. */
 export default function MyDogs({ client, onChange }: { client: Client; onChange: (client: Client) => void }) {
@@ -41,21 +41,21 @@ export default function MyDogs({ client, onChange }: { client: Client; onChange:
     const { data: id, error } = await supabase.rpc('add_my_dog', {
       p_name: draft.name.trim(),
       p_breed: draft.breed.trim(),
-      p_temperament: draft.temperament,
+      p_temperament: 'friendly', // not asked: dogs are always inside when we visit
       p_notes: draft.notes.trim(),
     })
     if (error || typeof id !== 'string') {
       setBusy(false)
       return setMessage(fail)
     }
-    const dog: Dog = { id, client_id: client.id, name: draft.name.trim(), breed: draft.breed.trim(), temperament: draft.temperament, notes: draft.notes.trim() }
+    const dog: Dog = { id, client_id: client.id, name: draft.name.trim(), breed: draft.breed.trim(), temperament: 'friendly', notes: draft.notes.trim() }
     const count = Math.min(billedDogs + 1, DOGS_MAX_PRICED)
     const priceNote = await reprice(count)
     setBusy(false)
     onChange({ ...client, dogs: [...dogs, dog], price_cents: priceNote.includes('Text us') ? client.price_cents : newPrice(count) })
     setAdding(false)
     setDraft(BLANK)
-    setMessage({ ok: true, text: `Welcome, ${dog.name}! We’ll say hi on your next visit.${priceNote}` })
+    setMessage({ ok: true, text: `Welcome, ${dog.name}! We added them to your account.${priceNote}` })
   }
 
   async function remove(dog: Dog) {
@@ -77,7 +77,7 @@ export default function MyDogs({ client, onChange }: { client: Client; onChange:
   return (
     <section className="card">
       <h2>Your dogs</h2>
-      {dogs.length === 0 && <div className="muted">Add your dogs so we know who we’re saying hi to.</div>}
+      {dogs.length === 0 && <div className="muted">Add your dogs so we know how many we’re scooping for.</div>}
       {dogs.map((d) => (
         <div key={d.id} className="stack" style={{ gap: 6 }}>
           <div className="row between">
@@ -85,7 +85,6 @@ export default function MyDogs({ client, onChange }: { client: Client; onChange:
               <strong>{d.name}</strong> {d.breed && <span className="muted">· {d.breed}</span>}
             </span>
             <span className="row" style={{ gap: 6 }}>
-              <span className="pill dog">{TEMPERAMENT_LABEL[d.temperament]}</span>
               {removing !== d.id && (
                 <button className="btn small" onClick={() => setRemoving(d.id)} disabled={busy}>
                   Remove
@@ -121,16 +120,7 @@ export default function MyDogs({ client, onChange }: { client: Client; onChange:
             </label>
           </div>
           <label className="field">
-            Around people they don’t know, they’re…
-            <select id="dog-temperament" value={draft.temperament} onChange={(e) => setDraft({ ...draft, temperament: e.target.value as Temperament })}>
-              <option value="friendly">Friendly</option>
-              <option value="shy">Shy</option>
-              <option value="jumpy">A jumper</option>
-              <option value="keep_out">Not safe to be around loose</option>
-            </select>
-          </label>
-          <label className="field">
-            Anything we should know? (optional)
+            Anything we should know? (sick, on medicine…) (optional)
             <input id="dog-notes" value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} maxLength={500} />
           </label>
           {standardPrice && billedDogs >= 3 && billedDogs < DOGS_MAX_PRICED && (

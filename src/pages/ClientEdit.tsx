@@ -6,13 +6,11 @@ import { PHOTO_BUCKET, supabase } from '../lib/supabase'
 import {
   DAYS,
   STATUS_LABEL,
-  TEMPERAMENT_LABEL,
   type Client,
   type ClientNote,
   type ClientStatus,
   type Dog,
   type Signup,
-  type Temperament,
   type Visit,
 } from '../lib/types'
 import { cleanupPending } from '../lib/texts'
@@ -313,16 +311,6 @@ export default function ClientEdit() {
                   <input id={`dog-breed-${i}`} value={d.breed} onChange={(e) => updateDog(i, { breed: e.target.value })} />
                 </label>
               </div>
-              <label className="field">
-                Around people
-                <select id={`dog-temp-${i}`} value={d.temperament} onChange={(e) => updateDog(i, { temperament: e.target.value as Temperament })}>
-                  {Object.entries(TEMPERAMENT_LABEL).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <label className="field">
                 Notes
                 <input id={`dog-notes-${i}`} value={d.notes} onChange={(e) => updateDog(i, { notes: e.target.value })} />
