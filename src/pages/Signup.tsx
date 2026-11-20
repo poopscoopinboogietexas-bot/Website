@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import PublicLayout from '../components/PublicLayout'
-import { BUSINESS, CLEANUP_FEES, cleanupFeeCents, PLANS as PLAN_INFO, WORK_DAY, type LastCleaned } from '../lib/business'
+import { BUSINESS, CLEANUP_FEES, cleanupFeeCents, DOGS_INCLUDED, EXTRA_DOG_CENTS, monthlyPriceCents, PLAN_BASE_CENTS, PLANS as PLAN_INFO, WORK_DAY, type LastCleaned } from '../lib/business'
+import { money } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
 import { authErrorText, returnUrl } from '../lib/links'
 import { DAYS } from '../lib/types'
@@ -22,11 +23,17 @@ export default function Signup() {
   // 'check-email' = account made, waiting on the confirmation link; 'ready' = already logged in
   const [done, setDone] = useState<false | 'check-email' | 'ready'>(false)
   const [error, setError] = useState('')
+  // Made here so we can look up the day the database booked for this sign-up.
+  const [signupId] = useState(() => (crypto.randomUUID ? crypto.randomUUID() : undefined))
 
   const set = (k: keyof typeof form, v: string | number | number[]) => setForm((f) => ({ ...f, [k]: v }))
 
   const subscription = form.plan !== 'one_time'
-  const fee = subscription ? cleanupFeeCents(form.last_cleaned, form.dog_count) : 0
+  const fee = subscription ? cleanupFeeCents(form.last_cleaned) : 0
+  const plan = form.plan === 'biweekly' ? 'biweekly' : 'weekly'
+  const extraDogs = Math.max(0, form.dog_count - DOGS_INCLUDED)
+  const monthly = monthlyPriceCents(plan, form.dog_count)
+  const [bookedDay, setBookedDay] = useState<number | null>(null)
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -53,7 +60,7 @@ export default function Signup() {
     }
 
     // 2. Send their details to the team (shows up under New sign-ups).
-    const details = { ...form, name: form.name.trim(), email, address: form.address.trim(), initial_fee_cents: fee }
+    const details = { ...(signupId ? { id: signupId } : {}), ...form, name: form.name.trim(), email, address: form.address.trim(), initial_fee_cents: fee }
     let { error } = await supabase.from('signups').insert(details)
     if (error && /last_cleaned|initial_fee_cents|bag_backup|blocked_days/.test(error.message)) {
       // Database updates not run yet: put the newer answers in the notes instead.
@@ -63,8 +70,13 @@ export default function Signup() {
       const notes = `${rest.notes}\n[Yard last cleaned: ${label}. Cleanup fee: $${initial_fee_cents / 100}. If bin unreachable, leave bags: ${bag_backup || 'not answered'}. Days that don’t work: ${noGo}]`.trim()
       ;({ error } = await supabase.from('signups').insert({ ...rest, notes }))
     }
+    if (!error && signupId && subscription) {
+      // The database books the day as the sign-up is saved (Monday and Wednesday fill first).
+      const { data: day } = await supabase.rpc('signup_day', { p_id: signupId })
+      if (typeof day === 'number') setBookedDay(day)
+    }
     setBusy(false)
-    if (error) return setError('Your login was made, but we couldn’t send your details. Try again, or text us.')
+    if (error) return setError('Your login was made, but we couldn’t send your details. Text us and we’ll finish setting you up.')
     setDone(data.session ? 'ready' : 'check-email')
   }
 
@@ -74,7 +86,7 @@ export default function Signup() {
       <header className="stack" style={{ alignItems: 'center', textAlign: 'center' }}>
         <img src="./logo.png" alt="Poop Scoopin' Boogie" style={{ width: 180 }} />
         <h1>{BUSINESS.tagline}</h1>
-        <div className="muted">Weekly dog poop pickup in Tyler, TX. You get a photo of your clean yard and latched gate after every visit.</div>
+        <div className="muted">Weekly or every-other-week dog poop pickup in Tyler, TX. You get a photo of your clean yard and latched gate after every visit.</div>
       </header>
 
       {done ? (
@@ -86,7 +98,18 @@ export default function Signup() {
               you don’t see it.
             </div>
           ) : null}
-          <div>We got your info. We’ll pick your service day based on your area and text you within a day. Your account page shows your sign-up and what happens next.</div>
+          {bookedDay !== null ? (
+            <div className="alert ok">
+              Your service day is <strong>{DAYS[bookedDay]}</strong>. We’ll text you the night before your first visit.
+            </div>
+          ) : null}
+          <div>
+            {bookedDay !== null
+              ? 'Your account page shows your plan, your first bill and what happens next.'
+              : form.plan === 'one_time'
+                ? 'We got your info and will text you within a day to set up your cleanup.'
+                : 'We got your info and will text you your service day within a day. Your account page shows your sign-up and what happens next.'}
+          </div>
           <Link to={done === 'ready' ? '/account' : '/login'} className="btn">
             {done === 'ready' ? 'Go to my account' : 'Log in'}
           </Link>
@@ -106,13 +129,21 @@ export default function Signup() {
             <label className="field">
               How many dogs?
               <select id="dog_count" value={form.dog_count} onChange={(e) => set('dog_count', Number(e.target.value))}>
-                {[1, 2, 3, 4, 5, 6].map((n) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                   <option key={n} value={n}>
-                    {n === 6 ? '6 or more' : n}
+                    {n === 8 ? '8 or more' : n}
                   </option>
                 ))}
               </select>
             </label>
+            {subscription && (
+              <div className="alert ok">
+                Your price: <strong>{money(monthly)}/month</strong>
+                {extraDogs > 0
+                  ? ` (${money(PLAN_BASE_CENTS[plan])} for up to ${DOGS_INCLUDED} dogs + ${money(EXTRA_DOG_CENTS)}/month for each of your ${extraDogs} extra dog${extraDogs === 1 ? '' : 's'})`
+                  : ` for up to ${DOGS_INCLUDED} dogs`}
+              </div>
+            )}
             {subscription && (
               <>
                 <label className="field">
@@ -131,8 +162,8 @@ export default function Signup() {
                 {form.last_cleaned && (
                   <div className={`alert ${fee ? 'warn' : 'ok'}`}>
                     {fee
-                      ? `One-time cleanup fee: +$${fee / 100} on your first bill only. If the yard needs a lot more than that, we’ll text you a photo and price before we start.`
-                      : 'No cleanup fee. Your first bill is just your plan.'}
+                      ? `One-time cleanup fee: +$${fee / 100} on your first bill only, so your first bill is ${money(monthly + fee)}. If the yard needs a lot more than that, we’ll text you a photo and price before we start.`
+                      : `No cleanup fee. Your first bill is just your plan, ${money(monthly)}.`}
                   </div>
                 )}
               </>
@@ -178,8 +209,7 @@ export default function Signup() {
             </div>
             <div className="muted">At least 8 characters. You’ll use your email and this password to log in and see your visit photos.</div>
             <div className="field">
-              We pick your service day based on your area so our route stays efficient. Are there any days that don’t work for you? (Like trash
-              pickup day.)
+              We book your service day for you. Are there any days that don’t work for you? (Like trash pickup day.)
               <div className="row">
                 {WORK_DAY.days.map((d) => (
                   <label key={d} className="check" style={{ padding: 0 }}>

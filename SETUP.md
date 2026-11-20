@@ -13,6 +13,7 @@ Still to run:
 - [ ] `0005_bag_backup.sql`: where to leave bags if the trash bin can't be reached
 - [ ] `0006_blocked_days.sql`: days that don't work for a customer (asked at sign-up)
 - [ ] `0007_signup_self_read.sql`: new customers can see their own sign-up on their account page
+- [ ] `0008_auto_day.sql`: books the service day automatically at sign-up (Monday and Wednesday first, 16 yards a day)
 
 Already run: `0001_init.sql`, `0002_customers.sql`.
 

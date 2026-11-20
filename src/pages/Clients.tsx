@@ -58,6 +58,7 @@ export default function Clients() {
               <span className="muted">
                 {s.phone} · {s.email}
               </span>
+              {typeof s.assigned_day === 'number' && <span className="pill dog">Booked: {DAYS[s.assigned_day]}</span>}
               {(s.initial_fee_cents ?? 0) > 0 && (
                 <span className="pill payment_issue">Initial cleanup: +${(s.initial_fee_cents ?? 0) / 100} · make it the last stop</span>
               )}

@@ -26,7 +26,7 @@ export const TEXTS = {
 
 /**
  * One-time initial cleanup fee, by how long since the yard was last cleaned.
- * Flat for 1–3 dogs; each dog after 3 adds CLEANUP_EXTRA_DOG_CENTS (only when there is a fee).
+ * Flat, no matter how many dogs (extra dogs only change the monthly price).
  * Edit amounts here; the sign-up page, FAQ and staff app all read from this.
  */
 export const CLEANUP_FEES = [
@@ -35,14 +35,11 @@ export const CLEANUP_FEES = [
   { value: '1_2_months', label: '1–2 months ago', cents: 3000 },
   { value: 'over_2_months', label: 'Over 2 months ago (or never)', cents: 5000 },
 ] as const
-export const CLEANUP_EXTRA_DOG_CENTS = 1000
 
 export type LastCleaned = (typeof CLEANUP_FEES)[number]['value']
 
-export function cleanupFeeCents(lastCleaned: LastCleaned | '' | null | undefined, dogCount: number): number {
-  const base = CLEANUP_FEES.find((f) => f.value === lastCleaned)?.cents ?? 0
-  if (base === 0) return 0
-  return base + Math.max(0, dogCount - DOGS_INCLUDED) * CLEANUP_EXTRA_DOG_CENTS
+export function cleanupFeeCents(lastCleaned: LastCleaned | '' | null | undefined): number {
+  return CLEANUP_FEES.find((f) => f.value === lastCleaned)?.cents ?? 0
 }
 
 /** Work day used to plan routes and arrival times. Times are minutes after midnight. */
@@ -52,6 +49,12 @@ export const WORK_DAY = {
   end: 17 * 60, // 5:00 PM
   minutesPerYard: 15,
   minutesFirstCleanup: 45,
+  // Automatic booking at sign-up (the database does the booking; keep these in step with
+  // supabase/migrations/0008_auto_day.sql): Monday and Wednesday fill first, then the rest,
+  // one yard every half hour from 9 to 5 = 16 yards a day.
+  fillFirst: [1, 3],
+  fillNext: [2, 4, 5],
+  yardsPerDay: 16,
   mph: 25, // average town driving speed
   roadFactor: 1.3, // roads are longer than a straight line
 }
@@ -111,7 +114,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'How much does it cost?',
-    a: 'Weekly service is $60 a month and every other week is $40 a month, for 1–3 dogs. Each dog after 3 adds $10 a month (so 4 dogs is $70 or $50). If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: free if it’s been under 2 weeks, $15 for 2–4 weeks, $30 for 1–2 months, and $50 for over 2 months (plus $10 for each dog after 3). If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
+    a: 'Weekly service is $60 a month and every other week is $40 a month, for 1–3 dogs. Each dog after 3 adds $10 a month (so 4 dogs is $70 or $50). If your yard hasn’t been cleaned in a while, there’s a one-time cleanup fee on your first bill: free if it’s been under 2 weeks, $15 for 2–4 weeks, $30 for 1–2 months, and $50 for over 2 months. If it’s much worse than expected, we’ll text you a photo and the new price before we start.',
   },
   {
     q: 'What if my grass is long?',
@@ -127,7 +130,7 @@ export const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Can I pick my service day?',
-    a: 'We set your day based on where you live so our route stays tight, and we skip any days you tell us don’t work (like trash day). We’ll text or email you your day before your first visit. We scoop Monday through Friday.',
+    a: 'We book your day for you when you sign up, from the open spots that week, and we skip any days you tell us don’t work (like trash day). Your day shows on the sign-up confirmation and your account page. We scoop Monday through Friday, 9 to 5.',
   },
   {
     q: 'What if it rains?',

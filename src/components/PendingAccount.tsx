@@ -24,22 +24,36 @@ export default function PendingAccount({ email }: { email: string }) {
   const fee = signup?.initial_fee_cents ?? 0
   const lastCleaned = CLEANUP_FEES.find((f) => f.value === signup?.last_cleaned)?.label
   const blocked = signup?.blocked_days ?? []
+  const oneTime = signup?.plan === 'one_time'
+  const day = typeof signup?.assigned_day === 'number' ? signup.assigned_day : null
 
   return (
     <>
       <section className="card">
         <div className="row between">
           <h2>You’re signed up!</h2>
-          <span className="pill doing">Picking your day</span>
+          <span className="pill doing">{day !== null ? `Every ${DAYS[day]}` : oneTime ? 'Setting up your cleanup' : 'Picking your day'}</span>
         </div>
         <ol className="stack" style={{ gap: 6, margin: 0, paddingLeft: 20 }}>
-          <li>
-            <strong>We pick your service day</strong> based on your area, so our route stays tight
-            {blocked.length ? `, and we’ll skip ${blocked.map((d) => DAYS[d]).join(' and ')}` : ''}.
-          </li>
-          <li>
-            <strong>We text and email you your day</strong>, usually within a day.
-          </li>
+          {day !== null ? (
+            <li>
+              <strong>Your service day is {DAYS[day]}.</strong> We’ll text you to confirm your first visit.
+            </li>
+          ) : oneTime ? (
+            <li>
+              <strong>We text you to pick a time</strong> for your one-time cleanup, usually within a day.
+            </li>
+          ) : (
+            <>
+              <li>
+                <strong>We pick your service day</strong>
+                {blocked.length ? `, skipping ${blocked.map((d) => DAYS[d]).join(' and ')}` : ''}.
+              </li>
+              <li>
+                <strong>We text and email you your day</strong>, usually within a day.
+              </li>
+            </>
+          )}
           <li>
             <strong>The night before each visit</strong>, you get a reminder text.
           </li>
@@ -58,6 +72,12 @@ export default function PendingAccount({ email }: { email: string }) {
               {plan?.name ?? signup.plan}
               {monthly !== null ? ` · ${money(monthly)}/month` : ' · from $60'}
             </dd>
+            {day !== null && (
+              <>
+                <dt>Service day</dt>
+                <dd>{DAYS[day]}</dd>
+              </>
+            )}
             <dt>Dogs</dt>
             <dd>{signup.dog_count}</dd>
             <dt>Address</dt>

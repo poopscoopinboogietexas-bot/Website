@@ -69,6 +69,8 @@ export interface Signup {
   last_cleaned?: string
   bag_backup?: string
   blocked_days?: number[]
+  /** Day the database booked at sign-up. Missing until migration 0008 runs. */
+  assigned_day?: number | null
   initial_fee_cents?: number
   created_at: string
 }

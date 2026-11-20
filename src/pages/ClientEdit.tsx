@@ -60,6 +60,7 @@ export default function ClientEdit() {
           price_cents: monthlyPriceCents(signup.plan === 'biweekly' ? 'biweekly' : 'weekly', signup.dog_count),
           ...(signup.bag_backup ? { bag_backup: signup.bag_backup } : {}),
           ...(signup.blocked_days?.length ? { blocked_days: signup.blocked_days } : {}),
+          ...(typeof signup.assigned_day === 'number' ? { service_day: signup.assigned_day } : {}),
           instructions: signup.notes,
           ...((signup.initial_fee_cents ?? 0) > 0 ? { initial_fee_cents: signup.initial_fee_cents, initial_fee_paid: false } : {}),
         }
